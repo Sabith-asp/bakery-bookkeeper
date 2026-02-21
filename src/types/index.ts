@@ -1,0 +1,63 @@
+export interface User {
+  id: string;
+  username: string;
+  token: string;
+}
+
+export interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  login: (username: string, password: string) => Promise<void>;
+  logout: () => void;
+}
+
+export interface Income {
+  id: string;
+  amount: number;
+  description: string;
+  date: string;
+  createdAt: string;
+}
+
+export interface Expense {
+  id: string;
+  amount: number;
+  description: string;
+  category: string;
+  date: string;
+  createdAt: string;
+}
+
+export interface Wage {
+  id: string;
+  employeeName: string;
+  amount: number;
+  date: string;
+  createdAt: string;
+}
+
+export interface DashboardSummary {
+  todayIncome: number;
+  todayExpense: number;
+  todayBalance: number;
+}
+
+export interface IncomeFormData {
+  amount: number;
+  description: string;
+  date: string;
+}
+
+export interface ExpenseFormData {
+  amount: number;
+  description: string;
+  category: string;
+  date: string;
+}
+
+export interface WageFormData {
+  employeeName: string;
+  amount: number;
+  date: string;
+}
