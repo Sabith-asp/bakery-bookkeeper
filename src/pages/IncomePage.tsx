@@ -66,7 +66,11 @@ const IncomePage = () => {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-foreground">{item.description}</p>
-                      <p className="text-xs text-muted-foreground">{item.date}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(item.date).toLocaleDateString("en-IN", { 
+                          timeZone: "Asia/Kolkata" 
+                        })}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">

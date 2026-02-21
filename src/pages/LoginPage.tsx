@@ -25,9 +25,10 @@ const LoginPage = () => {
     try {
       await login(username.trim(), password);
       navigate("/", { replace: true });
-    } catch {
-      toast({ title: "Login Failed", description: "Invalid credentials", variant: "destructive" });
-    } finally {
+    } catch (err) {
+  console.log("LOGIN ERROR:", err);
+  toast({ title: "Login Failed", description: "Invalid credentials", variant: "destructive" });
+} finally {
       setLoading(false);
     }
   };

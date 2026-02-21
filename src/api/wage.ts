@@ -2,7 +2,7 @@ import apiClient from "./client";
 import { dummyWages, filterByDate } from "@/lib/dummyData";
 import type { Wage, WageFormData } from "@/types";
 
-const USE_DUMMY = true;
+const USE_DUMMY = false;
 
 export const wageApi = {
   getAll: async (params?: { startDate?: string; endDate?: string }): Promise<Wage[]> => {

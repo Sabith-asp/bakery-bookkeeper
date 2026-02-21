@@ -16,6 +16,7 @@ const AddWagePage = () => {
   const queryClient = useQueryClient();
 
   const [employeeName, setEmployeeName] = useState("");
+  const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
 
@@ -42,7 +43,7 @@ const AddWagePage = () => {
       toast({ title: "Error", description: "Enter employee name", variant: "destructive" });
       return;
     }
-    mutation.mutate({ employeeName: employeeName.trim(), amount: parsedAmount, date });
+    mutation.mutate({ employeeName: employeeName.trim(), amount: parsedAmount, date, description });
   };
 
   return (
@@ -61,6 +62,10 @@ const AddWagePage = () => {
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">Employee Name</label>
                 <Input placeholder="e.g. Rahul" value={employeeName} onChange={(e) => setEmployeeName(e.target.value)} maxLength={100} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Description</label>
+                <Input placeholder="e.g. Salary" value={description} onChange={(e) => setDescription(e.target.value)} maxLength={100} />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">Amount (₹)</label>

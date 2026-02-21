@@ -65,7 +65,14 @@ const ExpensePage = () => {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-foreground">{item.description}</p>
-                      <p className="text-xs text-muted-foreground">{item.category} · {item.date}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.category} · {new Date(item.date).toLocaleDateString("en-IN", {
+                          timeZone: "Asia/Kolkata",
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                        })}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">

@@ -32,6 +32,7 @@ export interface Expense {
 export interface Wage {
   id: string;
   employeeName: string;
+  description: string;
   amount: number;
   date: string;
   createdAt: string;
@@ -58,6 +59,7 @@ export interface ExpenseFormData {
 
 export interface WageFormData {
   employeeName: string;
+  description: string;
   amount: number;
   date: string;
 }

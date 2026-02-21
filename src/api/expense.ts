@@ -2,7 +2,7 @@ import apiClient from "./client";
 import { dummyExpenses, filterByDate } from "@/lib/dummyData";
 import type { Expense, ExpenseFormData } from "@/types";
 
-const USE_DUMMY = true;
+const USE_DUMMY = false;
 
 export const expenseApi = {
   getAll: async (params?: { startDate?: string; endDate?: string }): Promise<Expense[]> => {

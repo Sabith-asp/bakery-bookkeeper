@@ -1,6 +1,6 @@
 import apiClient from "./client";
 
-const USE_DUMMY = true;
+const USE_DUMMY = false;
 
 export const authApi = {
   login: async (username: string, password: string) => {

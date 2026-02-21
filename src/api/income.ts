@@ -2,7 +2,7 @@ import apiClient from "./client";
 import { dummyIncomes, filterByDate } from "@/lib/dummyData";
 import type { Income, IncomeFormData } from "@/types";
 
-const USE_DUMMY = true;
+const USE_DUMMY = false;
 
 export const incomeApi = {
   getAll: async (params?: { startDate?: string; endDate?: string }): Promise<Income[]> => {

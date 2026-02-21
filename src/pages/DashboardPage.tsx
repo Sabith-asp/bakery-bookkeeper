@@ -160,7 +160,11 @@ const DashboardPage = () => {
                         </div>
                         <div>
                           <span className="text-sm text-foreground">{item.description}</span>
-                          <p className="text-xs text-muted-foreground">{item.date}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(item.date).toLocaleDateString("en-IN", { 
+                              timeZone: "Asia/Kolkata" 
+                            })}
+                          </p>
                         </div>
                       </div>
                       <span className="text-sm font-semibold text-income">
@@ -176,7 +180,11 @@ const DashboardPage = () => {
                         </div>
                         <div>
                           <span className="text-sm text-foreground">{item.description}</span>
-                          <p className="text-xs text-muted-foreground">{item.date}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(item.date).toLocaleDateString("en-IN", { 
+                              timeZone: "Asia/Kolkata" 
+                            })}
+                          </p>
                         </div>
                       </div>
                       <span className="text-sm font-semibold text-expense">
@@ -192,7 +200,11 @@ const DashboardPage = () => {
                         </div>
                         <div>
                           <span className="text-sm text-foreground">{item.employeeName}</span>
-                          <p className="text-xs text-muted-foreground">{item.date}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(item.date).toLocaleDateString("en-IN", { 
+                              timeZone: "Asia/Kolkata" 
+                            })}
+                          </p>
                         </div>
                       </div>
                       <span className="text-sm font-semibold text-wage">
