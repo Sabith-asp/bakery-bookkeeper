@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import PageHeader from "@/components/PageHeader";
 import BottomNav from "@/components/BottomNav";
+import DateRangeFilter from "@/components/DateRangeFilter";
 import { incomeApi } from "@/api/income";
 import { expenseApi } from "@/api/expense";
 import { wageApi } from "@/api/wage";
@@ -15,19 +16,27 @@ const DashboardPage = () => {
   const navigate = useNavigate();
   const today = format(new Date(), "yyyy-MM-dd");
 
+  const [startDate, setStartDate] = useState(today);
+  const [endDate, setEndDate] = useState(today);
+
+  const handleDateChange = (start: string, end: string) => {
+    setStartDate(start);
+    setEndDate(end);
+  };
+
   const { data: incomes = [] } = useQuery({
-    queryKey: ["income", today],
-    queryFn: () => incomeApi.getAll({ startDate: today, endDate: today }),
+    queryKey: ["income", startDate, endDate],
+    queryFn: () => incomeApi.getAll({ startDate, endDate }),
   });
 
   const { data: expenses = [] } = useQuery({
-    queryKey: ["expense", today],
-    queryFn: () => expenseApi.getAll({ startDate: today, endDate: today }),
+    queryKey: ["expense", startDate, endDate],
+    queryFn: () => expenseApi.getAll({ startDate, endDate }),
   });
 
   const { data: wages = [] } = useQuery({
-    queryKey: ["wage", today],
-    queryFn: () => wageApi.getAll({ startDate: today, endDate: today }),
+    queryKey: ["wage", startDate, endDate],
+    queryFn: () => wageApi.getAll({ startDate, endDate }),
   });
 
   const summary = useMemo(() => {
@@ -41,15 +50,20 @@ const DashboardPage = () => {
     };
   }, [incomes, expenses, wages]);
 
+  const isToday = startDate === today && endDate === today;
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <PageHeader title="Dashboard" subtitle={format(new Date(), "EEEE, MMM d")} />
 
       <div className="space-y-4 px-4 pt-2">
+        {/* Date Filter */}
+        <DateRangeFilter startDate={startDate} endDate={endDate} onDateChange={handleDateChange} />
+
         {/* Balance Card */}
         <Card className="bg-primary text-primary-foreground border-0 shadow-lg">
           <CardContent className="py-5">
-            <p className="text-sm opacity-80">Today's Balance</p>
+            <p className="text-sm opacity-80">{isToday ? "Today's" : "Filtered"} Balance</p>
             <p className="text-3xl font-bold font-display">
               ₹{summary.balance.toLocaleString("en-IN")}
             </p>
@@ -125,16 +139,16 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        {/* Recent Activity */}
+        {/* Activity */}
         <div>
           <h2 className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-            Today's Activity
+            {isToday ? "Today's" : "Filtered"} Activity
           </h2>
           <Card>
             <CardContent className="divide-y divide-border py-0">
               {incomes.length === 0 && expenses.length === 0 && wages.length === 0 ? (
                 <p className="py-6 text-center text-sm text-muted-foreground">
-                  No transactions today
+                  No transactions found
                 </p>
               ) : (
                 <>
@@ -144,7 +158,10 @@ const DashboardPage = () => {
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-income/10">
                           <TrendingUp className="h-4 w-4 text-income" />
                         </div>
-                        <span className="text-sm text-foreground">{item.description}</span>
+                        <div>
+                          <span className="text-sm text-foreground">{item.description}</span>
+                          <p className="text-xs text-muted-foreground">{item.date}</p>
+                        </div>
                       </div>
                       <span className="text-sm font-semibold text-income">
                         +₹{item.amount.toLocaleString("en-IN")}
@@ -157,7 +174,10 @@ const DashboardPage = () => {
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-expense/10">
                           <TrendingDown className="h-4 w-4 text-expense" />
                         </div>
-                        <span className="text-sm text-foreground">{item.description}</span>
+                        <div>
+                          <span className="text-sm text-foreground">{item.description}</span>
+                          <p className="text-xs text-muted-foreground">{item.date}</p>
+                        </div>
                       </div>
                       <span className="text-sm font-semibold text-expense">
                         -₹{item.amount.toLocaleString("en-IN")}
@@ -170,7 +190,10 @@ const DashboardPage = () => {
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-wage/10">
                           <Users className="h-4 w-4 text-wage" />
                         </div>
-                        <span className="text-sm text-foreground">{item.employeeName}</span>
+                        <div>
+                          <span className="text-sm text-foreground">{item.employeeName}</span>
+                          <p className="text-xs text-muted-foreground">{item.date}</p>
+                        </div>
                       </div>
                       <span className="text-sm font-semibold text-wage">
                         -₹{item.amount.toLocaleString("en-IN")}
