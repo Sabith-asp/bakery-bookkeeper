@@ -13,6 +13,7 @@ export const EXPENSE_CATEGORIES = [
   "Marketing",
   "Internet",
   "Software",
+  "Hardware",
   "Other",
 ] as const;
 
