@@ -9,14 +9,15 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import BottomNav from "@/components/BottomNav";
 import { useToast } from "@/hooks/use-toast";
+import { EXPENSE_CATEGORIES } from "@/config/expenseCategories";
+import { useApiLoading } from "@/state/apiLoading";
 import { ArrowLeft } from "lucide-react";
-
-const categories = ["Parts", "Tools", "Transport", "Utilities", "Office", "Other"];
 
 const AddExpensePage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const isApiLoading = useApiLoading();
 
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
@@ -81,7 +82,7 @@ const AddExpensePage = () => {
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map((c) => (
+                    {EXPENSE_CATEGORIES.map((c) => (
                       <SelectItem key={c} value={c}>{c}</SelectItem>
                     ))}
                   </SelectContent>
@@ -91,8 +92,8 @@ const AddExpensePage = () => {
                 <label className="text-sm font-medium text-foreground">Date</label>
                 <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
               </div>
-              <Button type="submit" className="w-full" disabled={mutation.isPending}>
-                {mutation.isPending ? "Saving..." : "Save Expense"}
+              <Button type="submit" className="w-full" disabled={mutation.isPending || isApiLoading}>
+                {mutation.isPending ? "Saving..." : isApiLoading ? "Please wait..." : "Save Expense"}
               </Button>
             </form>
           </CardContent>

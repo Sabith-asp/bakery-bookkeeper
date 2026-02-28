@@ -9,18 +9,20 @@ import DateRangeFilter from "@/components/DateRangeFilter";
 import PageHeader from "@/components/PageHeader";
 import BottomNav from "@/components/BottomNav";
 import { useToast } from "@/hooks/use-toast";
+import { useApiLoading } from "@/state/apiLoading";
 import { Plus, TrendingUp, Trash2 } from "lucide-react";
 
 const IncomePage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const isApiLoading = useApiLoading();
   const today = format(new Date(), "yyyy-MM-dd");
 
   const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
   const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
 
-  const { data: incomes = [] } = useQuery({
+  const { data: incomes = [], isLoading } = useQuery({
     queryKey: ["income", startDate, endDate],
     queryFn: () => incomeApi.getAll({ startDate, endDate }),
   });
@@ -49,13 +51,15 @@ const IncomePage = () => {
           </CardContent>
         </Card>
 
-        <Button className="w-full" onClick={() => navigate("/income/add")}>
-          <Plus className="mr-2 h-4 w-4" /> Add Income
+        <Button className="w-full" onClick={() => navigate("/income/add")} disabled={isApiLoading}>
+          <Plus className="mr-2 h-4 w-4" /> {isApiLoading ? "Please wait..." : "Add Income"}
         </Button>
 
         <Card>
           <CardContent className="divide-y divide-border py-0">
-            {incomes.length === 0 ? (
+            {isLoading ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">Loading income entries...</p>
+            ) : incomes.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted-foreground">No income entries</p>
             ) : (
               incomes.map((item) => (
@@ -75,7 +79,13 @@ const IncomePage = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-income">₹{item.amount.toLocaleString("en-IN")}</span>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => deleteMutation.mutate(item.id)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      onClick={() => deleteMutation.mutate(item.id)}
+                      disabled={deleteMutation.isPending || isApiLoading}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>

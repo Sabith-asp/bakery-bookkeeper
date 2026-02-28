@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import PageHeader from "@/components/PageHeader";
 import BottomNav from "@/components/BottomNav";
 import DateRangeFilter from "@/components/DateRangeFilter";
+import { dashboardApi } from "@/api/dashboard";
 import { incomeApi } from "@/api/income";
 import { expenseApi } from "@/api/expense";
 import { wageApi } from "@/api/wage";
@@ -24,31 +25,25 @@ const DashboardPage = () => {
     setEndDate(end);
   };
 
+  const { data: summary } = useQuery({
+    queryKey: ["dashboard-summary", startDate, endDate],
+    queryFn: () => dashboardApi.getSummary({ startDate, endDate }),
+  });
+
   const { data: incomes = [] } = useQuery({
-    queryKey: ["income", startDate, endDate],
-    queryFn: () => incomeApi.getAll({ startDate, endDate }),
+    queryKey: ["income", startDate, endDate, "activity"],
+    queryFn: () => incomeApi.getAll({ startDate, endDate, limit: 20 }),
   });
 
   const { data: expenses = [] } = useQuery({
-    queryKey: ["expense", startDate, endDate],
-    queryFn: () => expenseApi.getAll({ startDate, endDate }),
+    queryKey: ["expense", startDate, endDate, "activity"],
+    queryFn: () => expenseApi.getAll({ startDate, endDate, limit: 20 }),
   });
 
   const { data: wages = [] } = useQuery({
-    queryKey: ["wage", startDate, endDate],
-    queryFn: () => wageApi.getAll({ startDate, endDate }),
+    queryKey: ["wage", startDate, endDate, "activity"],
+    queryFn: () => wageApi.getAll({ startDate, endDate, limit: 20 }),
   });
-
-  const summary = useMemo(() => {
-    const totalIncome = incomes.reduce((s, i) => s + i.amount, 0);
-    const totalExpense = expenses.reduce((s, e) => s + e.amount, 0);
-    const totalWage = wages.reduce((s, w) => s + w.amount, 0);
-    return {
-      income: totalIncome,
-      expense: totalExpense + totalWage,
-      balance: totalIncome - totalExpense - totalWage,
-    };
-  }, [incomes, expenses, wages]);
 
   const isToday = startDate === today && endDate === today;
 
@@ -57,20 +52,15 @@ const DashboardPage = () => {
       <PageHeader title="Dashboard" subtitle={format(new Date(), "EEEE, MMM d")} />
 
       <div className="space-y-4 px-4 pt-2">
-        {/* Date Filter */}
         <DateRangeFilter startDate={startDate} endDate={endDate} onDateChange={handleDateChange} />
 
-        {/* Balance Card */}
         <Card className="bg-primary text-primary-foreground border-0 shadow-lg">
           <CardContent className="py-5">
             <p className="text-sm opacity-80">{isToday ? "Today's" : "Filtered"} Balance</p>
-            <p className="text-3xl font-bold font-display">
-              ₹{summary.balance.toLocaleString("en-IN")}
-            </p>
+            <p className="text-3xl font-bold font-display">Rs. {(summary?.balance ?? 0).toLocaleString("en-IN")}</p>
           </CardContent>
         </Card>
 
-        {/* Summary Row */}
         <div className="grid grid-cols-2 gap-3">
           <Card>
             <CardContent className="py-4">
@@ -80,9 +70,7 @@ const DashboardPage = () => {
                 </div>
                 <span className="text-sm text-muted-foreground">Income</span>
               </div>
-              <p className="mt-2 text-xl font-bold text-foreground">
-                ₹{summary.income.toLocaleString("en-IN")}
-              </p>
+              <p className="mt-2 text-xl font-bold text-foreground">Rs. {(summary?.totalIncome ?? 0).toLocaleString("en-IN")}</p>
             </CardContent>
           </Card>
           <Card>
@@ -94,17 +82,14 @@ const DashboardPage = () => {
                 <span className="text-sm text-muted-foreground">Expenses</span>
               </div>
               <p className="mt-2 text-xl font-bold text-foreground">
-                ₹{summary.expense.toLocaleString("en-IN")}
+                Rs. {((summary?.totalExpense ?? 0) + (summary?.totalWage ?? 0)).toLocaleString("en-IN")}
               </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Quick Actions */}
         <div>
-          <h2 className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-            Quick Actions
-          </h2>
+          <h2 className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wide">Quick Actions</h2>
           <div className="grid grid-cols-3 gap-3">
             <Button
               variant="outline"
@@ -139,7 +124,6 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        {/* Activity */}
         <div>
           <h2 className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wide">
             {isToday ? "Today's" : "Filtered"} Activity
@@ -147,9 +131,7 @@ const DashboardPage = () => {
           <Card>
             <CardContent className="divide-y divide-border py-0">
               {incomes.length === 0 && expenses.length === 0 && wages.length === 0 ? (
-                <p className="py-6 text-center text-sm text-muted-foreground">
-                  No transactions found
-                </p>
+                <p className="py-6 text-center text-sm text-muted-foreground">No transactions found</p>
               ) : (
                 <>
                   {incomes.map((item) => (
@@ -161,15 +143,13 @@ const DashboardPage = () => {
                         <div>
                           <span className="text-sm text-foreground">{item.description}</span>
                           <p className="text-xs text-muted-foreground">
-                            {new Date(item.date).toLocaleDateString("en-IN", { 
-                              timeZone: "Asia/Kolkata" 
+                            {new Date(item.date).toLocaleDateString("en-IN", {
+                              timeZone: "Asia/Kolkata",
                             })}
                           </p>
                         </div>
                       </div>
-                      <span className="text-sm font-semibold text-income">
-                        +₹{item.amount.toLocaleString("en-IN")}
-                      </span>
+                      <span className="text-sm font-semibold text-income">+Rs. {item.amount.toLocaleString("en-IN")}</span>
                     </div>
                   ))}
                   {expenses.map((item) => (
@@ -181,15 +161,13 @@ const DashboardPage = () => {
                         <div>
                           <span className="text-sm text-foreground">{item.description}</span>
                           <p className="text-xs text-muted-foreground">
-                            {new Date(item.date).toLocaleDateString("en-IN", { 
-                              timeZone: "Asia/Kolkata" 
+                            {new Date(item.date).toLocaleDateString("en-IN", {
+                              timeZone: "Asia/Kolkata",
                             })}
                           </p>
                         </div>
                       </div>
-                      <span className="text-sm font-semibold text-expense">
-                        -₹{item.amount.toLocaleString("en-IN")}
-                      </span>
+                      <span className="text-sm font-semibold text-expense">-Rs. {item.amount.toLocaleString("en-IN")}</span>
                     </div>
                   ))}
                   {wages.map((item) => (
@@ -199,17 +177,15 @@ const DashboardPage = () => {
                           <Users className="h-4 w-4 text-wage" />
                         </div>
                         <div>
-                          <span className="text-sm text-foreground">{item.employeeName}</span>
+                          <span className="text-sm text-foreground">{item.employeeName || "Unknown Employee"}</span>
                           <p className="text-xs text-muted-foreground">
-                            {new Date(item.date).toLocaleDateString("en-IN", { 
-                              timeZone: "Asia/Kolkata" 
+                            {new Date(item.date).toLocaleDateString("en-IN", {
+                              timeZone: "Asia/Kolkata",
                             })}
                           </p>
                         </div>
                       </div>
-                      <span className="text-sm font-semibold text-wage">
-                        -₹{item.amount.toLocaleString("en-IN")}
-                      </span>
+                      <span className="text-sm font-semibold text-wage">-Rs. {item.amount.toLocaleString("en-IN")}</span>
                     </div>
                   ))}
                 </>

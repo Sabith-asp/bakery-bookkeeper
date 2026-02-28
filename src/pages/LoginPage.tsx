@@ -5,12 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { useApiLoading } from "@/state/apiLoading";
 import { Wrench } from "lucide-react";
 
 const LoginPage = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const isApiLoading = useApiLoading();
   const { login } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -64,8 +66,8 @@ const LoginPage = () => {
                 autoComplete="current-password"
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Signing in..." : "Sign In"}
+            <Button type="submit" className="w-full" disabled={loading || isApiLoading}>
+              {loading ? "Signing in..." : isApiLoading ? "Please wait..." : "Sign In"}
             </Button>
           </form>
         </CardContent>

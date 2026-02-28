@@ -9,17 +9,19 @@ import DateRangeFilter from "@/components/DateRangeFilter";
 import PageHeader from "@/components/PageHeader";
 import BottomNav from "@/components/BottomNav";
 import { useToast } from "@/hooks/use-toast";
+import { useApiLoading } from "@/state/apiLoading";
 import { Plus, Users, Trash2 } from "lucide-react";
 
 const WagePage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const isApiLoading = useApiLoading();
 
   const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
   const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
 
-  const { data: wages = [] } = useQuery({
+  const { data: wages = [], isLoading } = useQuery({
     queryKey: ["wage", startDate, endDate],
     queryFn: () => wageApi.getAll({ startDate, endDate }),
   });
@@ -48,13 +50,15 @@ const WagePage = () => {
           </CardContent>
         </Card>
 
-        <Button className="w-full" onClick={() => navigate("/wages/add")}>
-          <Plus className="mr-2 h-4 w-4" /> Add Wage
+        <Button className="w-full" onClick={() => navigate("/wages/add")} disabled={isApiLoading}>
+          <Plus className="mr-2 h-4 w-4" /> {isApiLoading ? "Please wait..." : "Add Wage"}
         </Button>
 
         <Card>
           <CardContent className="divide-y divide-border py-0">
-            {wages.length === 0 ? (
+            {isLoading ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">Loading wages...</p>
+            ) : wages.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted-foreground">No wage entries</p>
             ) : (
               wages.map((item) => (
@@ -64,7 +68,7 @@ const WagePage = () => {
                       <Users className="h-4 w-4 text-wage" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-foreground">{item.employeeName}</p>
+                      <p className="text-sm font-medium text-foreground">{item.employeeName || "Unknown Employee"}</p>
                       <p className="text-xs text-muted-foreground">
                         {new Date(item.date).toLocaleDateString("en-IN", { 
                           timeZone: "Asia/Kolkata" 
@@ -74,7 +78,13 @@ const WagePage = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-wage">₹{item.amount.toLocaleString("en-IN")}</span>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => deleteMutation.mutate(item.id)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      onClick={() => deleteMutation.mutate(item.id)}
+                      disabled={deleteMutation.isPending || isApiLoading}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>

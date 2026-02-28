@@ -9,17 +9,19 @@ import DateRangeFilter from "@/components/DateRangeFilter";
 import PageHeader from "@/components/PageHeader";
 import BottomNav from "@/components/BottomNav";
 import { useToast } from "@/hooks/use-toast";
+import { useApiLoading } from "@/state/apiLoading";
 import { Plus, TrendingDown, Trash2 } from "lucide-react";
 
 const ExpensePage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const isApiLoading = useApiLoading();
 
   const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
   const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
 
-  const { data: expenses = [] } = useQuery({
+  const { data: expenses = [], isLoading } = useQuery({
     queryKey: ["expense", startDate, endDate],
     queryFn: () => expenseApi.getAll({ startDate, endDate }),
   });
@@ -48,13 +50,15 @@ const ExpensePage = () => {
           </CardContent>
         </Card>
 
-        <Button className="w-full" onClick={() => navigate("/expenses/add")}>
-          <Plus className="mr-2 h-4 w-4" /> Add Expense
+        <Button className="w-full" onClick={() => navigate("/expenses/add")} disabled={isApiLoading}>
+          <Plus className="mr-2 h-4 w-4" /> {isApiLoading ? "Please wait..." : "Add Expense"}
         </Button>
 
         <Card>
           <CardContent className="divide-y divide-border py-0">
-            {expenses.length === 0 ? (
+            {isLoading ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">Loading expenses...</p>
+            ) : expenses.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted-foreground">No expense entries</p>
             ) : (
               expenses.map((item) => (
@@ -77,7 +81,13 @@ const ExpensePage = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-expense">₹{item.amount.toLocaleString("en-IN")}</span>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => deleteMutation.mutate(item.id)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      onClick={() => deleteMutation.mutate(item.id)}
+                      disabled={deleteMutation.isPending || isApiLoading}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>

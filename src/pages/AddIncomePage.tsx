@@ -9,12 +9,14 @@ import { Input } from "@/components/ui/input";
 import PageHeader from "@/components/PageHeader";
 import BottomNav from "@/components/BottomNav";
 import { useToast } from "@/hooks/use-toast";
+import { useApiLoading } from "@/state/apiLoading";
 import { ArrowLeft } from "lucide-react";
 
 const AddIncomePage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const isApiLoading = useApiLoading();
 
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
@@ -83,8 +85,8 @@ const AddIncomePage = () => {
                 <label className="text-sm font-medium text-foreground">Date</label>
                 <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
               </div>
-              <Button type="submit" className="w-full" disabled={mutation.isPending}>
-                {mutation.isPending ? "Saving..." : "Save Income"}
+              <Button type="submit" className="w-full" disabled={mutation.isPending || isApiLoading}>
+                {mutation.isPending ? "Saving..." : isApiLoading ? "Please wait..." : "Save Income"}
               </Button>
             </form>
           </CardContent>

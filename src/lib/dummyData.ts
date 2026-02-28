@@ -20,11 +20,11 @@ export const dummyExpenses: Expense[] = [
 ];
 
 export const dummyWages: Wage[] = [
-  { id: "1", employeeName: "Rahul Kumar", amount: 800, date: "2026-02-21", createdAt: "2026-02-21" },
-  { id: "2", employeeName: "Suresh Patel", amount: 750, date: "2026-02-21", createdAt: "2026-02-21" },
-  { id: "3", employeeName: "Amit Singh", amount: 900, date: "2026-02-20", createdAt: "2026-02-20" },
-  { id: "4", employeeName: "Rahul Kumar", amount: 800, date: "2026-02-19", createdAt: "2026-02-19" },
-  { id: "5", employeeName: "Deepak Sharma", amount: 700, date: "2026-02-18", createdAt: "2026-02-18" },
+  { id: "1", employeeId: "1", employeeName: "Rahul Kumar", description: "Daily wage", amount: 800, date: "2026-02-21", createdAt: "2026-02-21" },
+  { id: "2", employeeId: "2", employeeName: "Suresh Patel", description: "Service helper", amount: 750, date: "2026-02-21", createdAt: "2026-02-21" },
+  { id: "3", employeeId: "3", employeeName: "Amit Singh", description: "Maintenance support", amount: 900, date: "2026-02-20", createdAt: "2026-02-20" },
+  { id: "4", employeeId: "1", employeeName: "Rahul Kumar", description: "Daily wage", amount: 800, date: "2026-02-19", createdAt: "2026-02-19" },
+  { id: "5", employeeId: "4", employeeName: "Deepak Sharma", description: "Field assistant", amount: 700, date: "2026-02-18", createdAt: "2026-02-18" },
 ];
 
 export function filterByDate<T extends { date: string }>(items: T[], startDate?: string, endDate?: string): T[] {

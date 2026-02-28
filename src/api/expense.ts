@@ -5,7 +5,7 @@ import type { Expense, ExpenseFormData } from "@/types";
 const USE_DUMMY = false;
 
 export const expenseApi = {
-  getAll: async (params?: { startDate?: string; endDate?: string }): Promise<Expense[]> => {
+  getAll: async (params?: { startDate?: string; endDate?: string; limit?: number }): Promise<Expense[]> => {
     if (USE_DUMMY) return filterByDate(dummyExpenses, params?.startDate, params?.endDate);
     const { data } = await apiClient.get("/expense", { params });
     return data;

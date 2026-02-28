@@ -31,17 +31,25 @@ export interface Expense {
 
 export interface Wage {
   id: string;
-  employeeName: string;
-  description: string;
+  employeeId: string;
+  employeeName?: string;
+  description?: string;
   amount: number;
   date: string;
   createdAt: string;
 }
 
+export interface Employee {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
 export interface DashboardSummary {
-  todayIncome: number;
-  todayExpense: number;
-  todayBalance: number;
+  totalIncome: number;
+  totalExpense: number;
+  totalWage: number;
+  balance: number;
 }
 
 export interface IncomeFormData {
@@ -58,8 +66,8 @@ export interface ExpenseFormData {
 }
 
 export interface WageFormData {
-  employeeName: string;
-  description: string;
+  employeeId: string;
+  description?: string;
   amount: number;
   date: string;
 }

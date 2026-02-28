@@ -5,14 +5,19 @@ import type { Wage, WageFormData } from "@/types";
 const USE_DUMMY = false;
 
 export const wageApi = {
-  getAll: async (params?: { startDate?: string; endDate?: string }): Promise<Wage[]> => {
+  getAll: async (params?: { startDate?: string; endDate?: string; limit?: number }): Promise<Wage[]> => {
     if (USE_DUMMY) return filterByDate(dummyWages, params?.startDate, params?.endDate);
     const { data } = await apiClient.get("/wage", { params });
     return data;
   },
   create: async (wage: WageFormData): Promise<Wage> => {
     if (USE_DUMMY) {
-      const newItem: Wage = { id: Date.now().toString(), ...wage, createdAt: new Date().toISOString() };
+      const newItem: Wage = {
+        id: Date.now().toString(),
+        ...wage,
+        employeeName: "Employee",
+        createdAt: new Date().toISOString(),
+      };
       dummyWages.unshift(newItem);
       return newItem;
     }
