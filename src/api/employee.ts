@@ -15,6 +15,12 @@ export const employeeApi = {
     const { data } = await apiClient.get("/employee");
     return data;
   },
+  update: async (id: string, name: string): Promise<void> => {
+    await apiClient.put(`/employee/${id}`, { name: name.trim() });
+  },
+  delete: async (id: string): Promise<void> => {
+    await apiClient.delete(`/employee/${id}`);
+  },
   create: async (name: string): Promise<Employee> => {
     if (USE_DUMMY) {
       const newEmployee: Employee = {

@@ -45,6 +45,15 @@ export interface Employee {
   createdAt: string;
 }
 
+export interface PagedResult<T> {
+  items: T[];
+  totalCount: number;
+  totalAmount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 export interface DashboardSummary {
   totalIncome: number;
   totalExpense: number;

@@ -1,12 +1,15 @@
 import apiClient from "./client";
 import { dummyWages, filterByDate } from "@/lib/dummyData";
-import type { Wage, WageFormData } from "@/types";
+import type { Wage, WageFormData, PagedResult } from "@/types";
 
 const USE_DUMMY = false;
 
 export const wageApi = {
-  getAll: async (params?: { startDate?: string; endDate?: string; limit?: number }): Promise<Wage[]> => {
-    if (USE_DUMMY) return filterByDate(dummyWages, params?.startDate, params?.endDate);
+  getAll: async (params?: { startDate?: string; endDate?: string; page?: number; pageSize?: number }): Promise<PagedResult<Wage>> => {
+    if (USE_DUMMY) {
+      const items = filterByDate(dummyWages, params?.startDate, params?.endDate);
+      return { items, totalCount: items.length, page: 1, pageSize: items.length || 20, totalPages: 1 };
+    }
     const { data } = await apiClient.get("/wage", { params });
     return data;
   },
@@ -23,6 +26,9 @@ export const wageApi = {
     }
     const { data } = await apiClient.post("/wage", wage);
     return data;
+  },
+  update: async (id: string, wage: WageFormData): Promise<void> => {
+    await apiClient.put(`/wage/${id}`, wage);
   },
   delete: async (id: string): Promise<void> => {
     if (USE_DUMMY) {
