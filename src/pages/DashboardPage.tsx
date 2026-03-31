@@ -11,6 +11,7 @@ import { dashboardApi } from "@/api/dashboard";
 import { incomeApi } from "@/api/income";
 import { expenseApi } from "@/api/expense";
 import { wageApi } from "@/api/wage";
+import TrendChart from "@/components/TrendChart";
 import { TrendingUp, TrendingDown, Users, Plus } from "lucide-react";
 
 const DashboardPage = () => {
@@ -107,6 +108,8 @@ const DashboardPage = () => {
             </button>
           </div>
         </div>
+
+        <TrendChart />
 
         <div>
           <h2 className="mb-2.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">

@@ -25,8 +25,10 @@ const AddWagePage = () => {
 
   const editItem = location.state?.item as Wage | undefined;
   const isEditMode = !!editItem;
+  const prefillEmployeeId = location.state?.prefillEmployeeId as string | undefined;
+  const returnTo = location.state?.returnTo as string | undefined;
 
-  const [employeeId, setEmployeeId] = useState(editItem?.employeeId ?? "");
+  const [employeeId, setEmployeeId] = useState(editItem?.employeeId ?? prefillEmployeeId ?? "");
   const [newEmployeeName, setNewEmployeeName] = useState("");
   const [description, setDescription] = useState(editItem?.description ?? "");
   const [amount, setAmount] = useState(editItem ? String(editItem.amount) : "");
@@ -46,7 +48,7 @@ const AddWagePage = () => {
       queryClient.invalidateQueries({ queryKey: ["wage"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
       toast({ title: "Success", description: isEditMode ? "Wage updated" : "Wage saved" });
-      navigate("/wages");
+      navigate(returnTo ?? "/wages");
     },
     onError: () => {
       toast({ title: "Error", description: isEditMode ? "Failed to update wage" : "Failed to save wage", variant: "destructive" });

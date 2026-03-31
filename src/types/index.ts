@@ -54,6 +54,21 @@ export interface PagedResult<T> {
   totalPages: number;
 }
 
+export interface TrendDataPoint {
+  month: string;
+  label: string;
+  income: number;
+  expense: number;
+  wage: number;
+}
+
+export interface EmployeeWageSummary {
+  employeeId: string;
+  employeeName: string;
+  recordCount: number;
+  totalAmount: number;
+}
+
 export interface DashboardSummary {
   totalIncome: number;
   totalExpense: number;

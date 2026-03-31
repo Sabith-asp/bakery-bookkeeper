@@ -15,6 +15,7 @@ import AddExpensePage from "@/pages/AddExpensePage";
 import WagePage from "@/pages/WagePage";
 import AddWagePage from "@/pages/AddWagePage";
 import EmployeesPage from "@/pages/EmployeesPage";
+import EmployeeWagePage from "@/pages/EmployeeWagePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/wages/add" element={<ProtectedRoute><AddWagePage /></ProtectedRoute>} />
             <Route path="/wages/edit" element={<ProtectedRoute><AddWagePage /></ProtectedRoute>} />
             <Route path="/employees" element={<ProtectedRoute><EmployeesPage /></ProtectedRoute>} />
+            <Route path="/employees/:id/wages" element={<ProtectedRoute><EmployeeWagePage /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

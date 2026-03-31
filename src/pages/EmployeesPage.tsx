@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { employeeApi } from "@/api/employee";
+import { wageApi } from "@/api/wage";
 import type { Employee } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,9 +12,10 @@ import PageHeader from "@/components/PageHeader";
 import BottomNav from "@/components/BottomNav";
 import { useToast } from "@/hooks/use-toast";
 import { useApiLoading } from "@/state/apiLoading";
-import { Plus, Pencil, Trash2, Check, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Check, X, ChevronRight } from "lucide-react";
 
 const EmployeesPage = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isApiLoading = useApiLoading();
@@ -27,6 +30,14 @@ const EmployeesPage = () => {
     queryKey: ["employee"],
     queryFn: employeeApi.getAll,
   });
+
+  const { data: wageSummaries = [] } = useQuery({
+    queryKey: ["employee-wage-summary"],
+    queryFn: () => wageApi.getEmployeeSummary(),
+  });
+
+  const getWageSummary = (employeeId: string) =>
+    wageSummaries.find((s) => s.employeeId === employeeId);
 
   const renameMutation = useMutation({
     mutationFn: ({ id, name }: { id: string; name: string }) => employeeApi.update(id, name),
@@ -166,7 +177,12 @@ const EmployeesPage = () => {
                       <div>
                         <p className="text-sm font-medium text-foreground">{employee.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          Since {new Date(employee.createdAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", year: "numeric" })}
+                          {(() => {
+                            const summary = getWageSummary(employee.id);
+                            return summary
+                              ? `₹${summary.totalAmount.toLocaleString("en-IN")} · ${summary.recordCount} ${summary.recordCount === 1 ? "entry" : "entries"}`
+                              : `Since ${new Date(employee.createdAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", year: "numeric" })}`;
+                          })()}
                         </p>
                       </div>
                     )}
@@ -184,6 +200,16 @@ const EmployeesPage = () => {
                       </>
                     ) : (
                       <>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-wage"
+                          onClick={() => navigate(`/employees/${employee.id}/wages`)}
+                          disabled={isApiLoading || deleteMutation.isPending}
+                          title="View wages"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
