@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import BottomNav from "@/components/BottomNav";
 import { useToast } from "@/hooks/use-toast";
 import { useApiLoading } from "@/state/apiLoading";
+import { PAYMENT_METHODS } from "@/config/paymentMethods";
+import { cn } from "@/lib/utils";
 import { ArrowLeft, TrendingUp } from "lucide-react";
 
 const MAX_DESC = 200;
@@ -26,6 +28,7 @@ const AddIncomePage = () => {
 
   const [amount, setAmount] = useState(editItem ? String(editItem.amount) : "");
   const [description, setDescription] = useState(editItem?.description ?? "");
+  const [paymentMethod, setPaymentMethod] = useState(editItem?.paymentMethod ?? "");
   const [date, setDate] = useState(editItem ? editItem.date.substring(0, 10) : format(new Date(), "yyyy-MM-dd"));
 
   const mutation = useMutation({
@@ -53,7 +56,7 @@ const AddIncomePage = () => {
       toast({ title: "Description required", description: "Enter a description", variant: "destructive" });
       return;
     }
-    mutation.mutate({ amount: parsedAmount, description: description.trim(), date });
+    mutation.mutate({ amount: parsedAmount, description: description.trim(), date, paymentMethod: paymentMethod || undefined });
   };
 
   const today = format(new Date(), "yyyy-MM-dd");
@@ -120,6 +123,28 @@ const AddIncomePage = () => {
                   maxLength={MAX_DESC}
                   className="h-11"
                 />
+              </div>
+
+              {/* Payment Method */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-foreground">Payment Method <span className="font-normal text-muted-foreground">(optional)</span></label>
+                <div className="flex flex-wrap gap-2">
+                  {PAYMENT_METHODS.map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setPaymentMethod((p) => (p === m ? "" : m))}
+                      className={cn(
+                        "px-3 py-1.5 text-xs rounded-lg border font-medium transition-all",
+                        paymentMethod === m
+                          ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                          : "bg-background text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
+                      )}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Date */}

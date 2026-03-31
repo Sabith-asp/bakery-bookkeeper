@@ -103,7 +103,7 @@ const IncomePage = () => {
                       <div>
                         <p className="text-sm font-medium text-foreground">{item.description}</p>
                         <p className="text-xs text-muted-foreground">
-                          {new Date(item.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}
+                          {item.paymentMethod ? `${item.paymentMethod} · ` : ""}{new Date(item.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}
                         </p>
                       </div>
                     </div>

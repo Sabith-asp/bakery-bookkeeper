@@ -104,6 +104,7 @@ const WagePage = () => {
                         <p className="text-sm font-medium text-foreground">{item.employeeName || "Unknown Employee"}</p>
                         <p className="text-xs text-muted-foreground">
                           {item.description ? `${item.description} · ` : ""}
+                          {item.paymentMethod ? `${item.paymentMethod} · ` : ""}
                           {new Date(item.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}
                         </p>
                       </div>

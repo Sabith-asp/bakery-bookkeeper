@@ -14,7 +14,8 @@ import PageHeader from "@/components/PageHeader";
 import BottomNav from "@/components/BottomNav";
 import { useToast } from "@/hooks/use-toast";
 import { useApiLoading } from "@/state/apiLoading";
-import { Plus, TrendingDown, Trash2, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, TrendingDown, Trash2, Pencil, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { EXPENSE_CATEGORIES } from "@/config/expenseCategories";
 
 const PAGE_SIZE = 20;
 
@@ -26,6 +27,7 @@ const ExpensePage = () => {
 
   const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
   const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
+  const [category, setCategory] = useState("");
   const [pendingDelete, setPendingDelete] = useState<Expense | null>(null);
   const [page, setPage] = useState(1);
 
@@ -35,9 +37,14 @@ const ExpensePage = () => {
     setEndDate(e);
   };
 
+  const handleCategoryChange = (c: string) => {
+    setPage(1);
+    setCategory((prev) => (prev === c ? "" : c));
+  };
+
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: ["expense", startDate, endDate, page, PAGE_SIZE],
-    queryFn: () => expenseApi.getAll({ startDate, endDate, page, pageSize: PAGE_SIZE }),
+    queryKey: ["expense", startDate, endDate, page, PAGE_SIZE, category],
+    queryFn: () => expenseApi.getAll({ startDate, endDate, page, pageSize: PAGE_SIZE, category: category || undefined }),
     placeholderData: keepPreviousData,
   });
 
@@ -68,6 +75,32 @@ const ExpensePage = () => {
             <p className="text-2xl font-bold text-expense mt-0.5">₹{totalAmount.toLocaleString("en-IN")}</p>
           </CardContent>
         </Card>
+
+        {/* Category filter */}
+        <div className="flex gap-1.5 flex-wrap">
+          {EXPENSE_CATEGORIES.map((c) => (
+            <button
+              key={c}
+              onClick={() => handleCategoryChange(c)}
+              className={cn(
+                "px-2.5 py-1 text-[11px] font-medium rounded-lg border transition-all",
+                category === c
+                  ? "bg-expense text-expense-foreground border-expense shadow-sm"
+                  : "bg-background text-muted-foreground border-border hover:border-expense/40"
+              )}
+            >
+              {c}
+            </button>
+          ))}
+          {category && (
+            <button
+              onClick={() => handleCategoryChange("")}
+              className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium rounded-lg border border-muted-foreground/30 text-muted-foreground hover:text-foreground transition-all"
+            >
+              <X className="h-2.5 w-2.5" /> Clear
+            </button>
+          )}
+        </div>
 
         <Button className="w-full" onClick={() => navigate("/expenses/add")} disabled={isApiLoading}>
           <Plus className="mr-2 h-4 w-4" /> {isApiLoading ? "Please wait..." : "Add Expense"}
@@ -103,7 +136,7 @@ const ExpensePage = () => {
                       <div>
                         <p className="text-sm font-medium text-foreground">{item.description}</p>
                         <p className="text-xs text-muted-foreground">
-                          {item.category} · {new Date(item.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "2-digit", year: "numeric" })}
+                          {item.category}{item.paymentMethod ? ` · ${item.paymentMethod}` : ""} · {new Date(item.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "2-digit", year: "numeric" })}
                         </p>
                       </div>
                     </div>

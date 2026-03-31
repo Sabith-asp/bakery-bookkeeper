@@ -18,6 +18,7 @@ export interface Income {
   description: string;
   date: string;
   createdAt: string;
+  paymentMethod?: string;
 }
 
 export interface Expense {
@@ -27,6 +28,7 @@ export interface Expense {
   category: string;
   date: string;
   createdAt: string;
+  paymentMethod?: string;
 }
 
 export interface Wage {
@@ -37,6 +39,7 @@ export interface Wage {
   amount: number;
   date: string;
   createdAt: string;
+  paymentMethod?: string;
 }
 
 export interface Employee {
@@ -80,6 +83,7 @@ export interface IncomeFormData {
   amount: number;
   description: string;
   date: string;
+  paymentMethod?: string;
 }
 
 export interface ExpenseFormData {
@@ -87,6 +91,7 @@ export interface ExpenseFormData {
   description: string;
   category: string;
   date: string;
+  paymentMethod?: string;
 }
 
 export interface WageFormData {
@@ -94,4 +99,5 @@ export interface WageFormData {
   description?: string;
   amount: number;
   date: string;
+  paymentMethod?: string;
 }

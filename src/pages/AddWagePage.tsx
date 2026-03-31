@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import BottomNav from "@/components/BottomNav";
 import { useToast } from "@/hooks/use-toast";
 import { useApiLoading } from "@/state/apiLoading";
+import { PAYMENT_METHODS } from "@/config/paymentMethods";
+import { cn } from "@/lib/utils";
 import { ArrowLeft, Users } from "lucide-react";
 
 const MAX_DESC = 100;
@@ -31,6 +33,7 @@ const AddWagePage = () => {
   const [employeeId, setEmployeeId] = useState(editItem?.employeeId ?? prefillEmployeeId ?? "");
   const [newEmployeeName, setNewEmployeeName] = useState("");
   const [description, setDescription] = useState(editItem?.description ?? "");
+  const [paymentMethod, setPaymentMethod] = useState(editItem?.paymentMethod ?? "");
   const [amount, setAmount] = useState(editItem ? String(editItem.amount) : "");
   const [date, setDate] = useState(editItem ? editItem.date.substring(0, 10) : format(new Date(), "yyyy-MM-dd"));
 
@@ -87,7 +90,7 @@ const AddWagePage = () => {
       toast({ title: "Employee required", description: "Select an employee", variant: "destructive" });
       return;
     }
-    mutation.mutate({ employeeId, amount: parsedAmount, date, description: description.trim() || undefined });
+    mutation.mutate({ employeeId, amount: parsedAmount, date, description: description.trim() || undefined, paymentMethod: paymentMethod || undefined });
   };
 
   const today = format(new Date(), "yyyy-MM-dd");
@@ -205,6 +208,28 @@ const AddWagePage = () => {
                   maxLength={MAX_DESC}
                   className="h-11"
                 />
+              </div>
+
+              {/* Payment Method */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-foreground">Payment Method <span className="font-normal text-muted-foreground">(optional)</span></label>
+                <div className="flex flex-wrap gap-2">
+                  {PAYMENT_METHODS.map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setPaymentMethod((p) => (p === m ? "" : m))}
+                      className={cn(
+                        "px-3 py-1.5 text-xs rounded-lg border font-medium transition-all",
+                        paymentMethod === m
+                          ? "bg-wage text-wage-foreground border-wage shadow-sm"
+                          : "bg-background text-muted-foreground border-border hover:border-wage/40 hover:text-foreground"
+                      )}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Date */}
