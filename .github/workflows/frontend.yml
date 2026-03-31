@@ -1,0 +1,33 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (Vite)
+        run: npm run build
+        env:
+          # Add secret: GitHub repo → Settings → Secrets → Actions → VITE_API_BASE_URL
+          # Value: your Render backend URL e.g. https://bakefix-api.onrender.com
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
