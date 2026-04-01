@@ -25,8 +25,8 @@ const LoginPage = () => {
     }
     setLoading(true);
     try {
-      await login(username.trim(), password);
-      navigate("/", { replace: true });
+      const userData = await login(username.trim(), password);
+      navigate(userData.role === "SuperAdmin" ? "/admin" : "/", { replace: true });
     } catch (err) {
   console.log("LOGIN ERROR:", err);
   toast({ title: "Login Failed", description: "Invalid credentials", variant: "destructive" });

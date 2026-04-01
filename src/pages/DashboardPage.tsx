@@ -13,9 +13,11 @@ import { expenseApi } from "@/api/expense";
 import { wageApi } from "@/api/wage";
 import TrendChart from "@/components/TrendChart";
 import { TrendingUp, TrendingDown, Users, Plus } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 const DashboardPage = () => {
   const navigate = useNavigate();
+  const { hasModule } = useAuth();
   const today = format(new Date(), "yyyy-MM-dd");
 
   const [startDate, setStartDate] = useState(today);
@@ -44,6 +46,7 @@ const DashboardPage = () => {
   const { data: wageData } = useQuery({
     queryKey: ["wage", startDate, endDate, "activity"],
     queryFn: () => wageApi.getAll({ startDate, endDate, page: 1, pageSize: 20 }),
+    enabled: hasModule("Wages"),
   });
 
   const incomes = incomeData?.items ?? [];
@@ -78,7 +81,7 @@ const DashboardPage = () => {
 
         <div>
           <h2 className="mb-2.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Quick Add</h2>
-          <div className="grid grid-cols-3 gap-2.5">
+          <div className={`grid gap-2.5 ${hasModule("Wages") ? "grid-cols-3" : "grid-cols-2"}`}>
             <button
               className="flex flex-col items-center gap-2 py-4 rounded-xl bg-card border border-income/20 hover:border-income/50 hover:bg-income/5 active:scale-95 transition-all shadow-sm"
               onClick={() => navigate("/income/add")}
@@ -97,15 +100,17 @@ const DashboardPage = () => {
               </div>
               <span className="text-xs font-semibold text-expense">Expense</span>
             </button>
-            <button
-              className="flex flex-col items-center gap-2 py-4 rounded-xl bg-card border border-wage/20 hover:border-wage/50 hover:bg-wage/5 active:scale-95 transition-all shadow-sm"
-              onClick={() => navigate("/wages/add")}
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-wage/10">
-                <Users className="h-5 w-5 text-wage" />
-              </div>
-              <span className="text-xs font-semibold text-wage">Wage</span>
-            </button>
+            {hasModule("Wages") && (
+              <button
+                className="flex flex-col items-center gap-2 py-4 rounded-xl bg-card border border-wage/20 hover:border-wage/50 hover:bg-wage/5 active:scale-95 transition-all shadow-sm"
+                onClick={() => navigate("/wages/add")}
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-wage/10">
+                  <Users className="h-5 w-5 text-wage" />
+                </div>
+                <span className="text-xs font-semibold text-wage">Wage</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -153,7 +158,7 @@ const DashboardPage = () => {
                       <span className="text-sm font-bold text-expense">-₹{item.amount.toLocaleString("en-IN")}</span>
                     </div>
                   ))}
-                  {wages.map((item) => (
+                  {hasModule("Wages") && wages.map((item) => (
                     <div key={item.id} className="flex items-center justify-between py-3 px-1 -mx-1 rounded-lg hover:bg-muted/40 transition-colors">
                       <div className="flex items-center gap-3">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-wage/10">

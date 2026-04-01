@@ -2,14 +2,35 @@ export interface User {
   id: string;
   username: string;
   token: string;
+  role: string;
+  organizationId: string | null;
+  organizationName: string;
+  enabledModules: string[];
 }
 
 export interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (username: string, password: string) => Promise<void>;
+  isSuperAdmin: boolean;
+  hasModule: (module: string) => boolean;
+  login: (username: string, password: string) => Promise<User>;
   logout: () => void;
+}
+
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  isActive: boolean;
+  createdAt: string;
+  enabledModules: string[];
+}
+
+export interface OrgUser {
+  id: string;
+  username: string;
+  role: string;
 }
 
 export interface Income {

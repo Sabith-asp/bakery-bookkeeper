@@ -17,12 +17,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(false);
   }, []);
 
-  const login = useCallback(async (username: string, password: string) => {
+  const login = useCallback(async (username: string, password: string): Promise<User> => {
     const data = await authApi.login(username, password);
-    const userData: User = { id: data.id, username: data.username, token: data.token };
+    const userData: User = {
+      id: data.id,
+      username: data.username,
+      token: data.token,
+      role: data.role,
+      organizationId: data.organizationId ?? null,
+      organizationName: data.organizationName ?? "",
+      enabledModules: data.enabledModules ?? [],
+    };
     localStorage.setItem("token", data.token);
     localStorage.setItem("user", JSON.stringify(userData));
     setUser(userData);
+    return userData;
   }, []);
 
   const logout = useCallback(() => {
@@ -31,8 +40,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
   }, []);
 
+  const isSuperAdmin = user?.role === "SuperAdmin";
+
+  const hasModule = useCallback(
+    (module: string) => {
+      if (isSuperAdmin) return true;
+      return user?.enabledModules.includes(module) ?? false;
+    },
+    [user, isSuperAdmin]
+  );
+
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, logout }}>
+    <AuthContext.Provider
+      value={{ user, isAuthenticated: !!user, isLoading, isSuperAdmin: !!isSuperAdmin, hasModule, login, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );
