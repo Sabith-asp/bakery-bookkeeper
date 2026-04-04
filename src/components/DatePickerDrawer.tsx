@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { format, subDays, parseISO } from "date-fns";
+import { format, subDays, addDays, parseISO } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -14,9 +14,11 @@ interface DatePickerDrawerProps {
   value: string; // yyyy-MM-dd
   onChange: (date: string) => void;
   accentClass?: string;
+  disabled?: boolean;
+  allowFuture?: boolean;
 }
 
-const DatePickerDrawer = ({ value, onChange, accentClass }: DatePickerDrawerProps) => {
+const DatePickerDrawer = ({ value, onChange, accentClass, disabled, allowFuture }: DatePickerDrawerProps) => {
   const [open, setOpen] = useState(false);
 
   const selected = value ? parseISO(value) : new Date();
@@ -29,13 +31,18 @@ const DatePickerDrawer = ({ value, onChange, accentClass }: DatePickerDrawerProp
 
   const today = format(new Date(), "yyyy-MM-dd");
   const yesterday = format(subDays(new Date(), 1), "yyyy-MM-dd");
+  const tomorrow = format(addDays(new Date(), 1), "yyyy-MM-dd");
+
+  const secondQuick = allowFuture
+    ? { label: "Tomorrow", value: tomorrow }
+    : { label: "Yesterday", value: yesterday };
 
   const olderDates = Array.from({ length: 5 }, (_, i) => {
-    const d = subDays(new Date(), i + 2);
+    const d = allowFuture ? addDays(new Date(), i + 2) : subDays(new Date(), i + 2);
     return { label: format(d, "EEE d"), value: format(d, "yyyy-MM-dd") };
   });
 
-  const isOtherDate = value !== today && value !== yesterday;
+  const isOtherDate = value !== today && value !== secondQuick.value;
   const displayDate = value ? format(parseISO(value), "EEE, d MMM yyyy") : "Pick a date";
 
   return (
@@ -44,12 +51,13 @@ const DatePickerDrawer = ({ value, onChange, accentClass }: DatePickerDrawerProp
       <div className="grid grid-cols-2 gap-2">
         {[
           { label: "Today", value: today },
-          { label: "Yesterday", value: yesterday },
+          secondQuick,
         ].map((d) => (
           <button
             key={d.value}
             type="button"
             onClick={() => onChange(d.value)}
+            disabled={disabled}
             className={cn(
               "py-2.5 text-sm font-semibold rounded-xl border transition-all",
               value === d.value
@@ -66,6 +74,7 @@ const DatePickerDrawer = ({ value, onChange, accentClass }: DatePickerDrawerProp
       <button
         type="button"
         onClick={() => setOpen(true)}
+        disabled={disabled}
         className={cn(
           "flex w-full items-center gap-2 h-11 px-3 rounded-lg border text-sm font-medium transition-all",
           isOtherDate
@@ -109,7 +118,7 @@ const DatePickerDrawer = ({ value, onChange, accentClass }: DatePickerDrawerProp
               mode="single"
               selected={selected}
               onSelect={handleSelect}
-              disabled={(date) => date > new Date()}
+              disabled={allowFuture ? undefined : (date) => date > new Date()}
               initialFocus
               classNames={{
                 months: "flex flex-col w-full",

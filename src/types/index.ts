@@ -106,6 +106,46 @@ export interface TrendDataPoint {
   wage: number;
 }
 
+export interface Debt {
+  id: string;
+  organizationId: string;
+  personName: string;
+  amount: number;
+  type: "Payable" | "Receivable";
+  date: string;
+  dueDate?: string;
+  notes?: string;
+  isSettled: boolean;
+  createdAt: string;
+  paidAmount: number;
+  outstandingAmount: number;
+  payments?: DebtPayment[];
+}
+
+export interface DebtPayment {
+  id: string;
+  debtId: string;
+  amount: number;
+  date: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface DebtFormData {
+  personName: string;
+  amount: number;
+  type: "Payable" | "Receivable";
+  date: string;
+  dueDate?: string;
+  notes?: string;
+}
+
+export interface DebtPaymentFormData {
+  amount: number;
+  date: string;
+  notes?: string;
+}
+
 export interface EmployeeWageSummary {
   employeeId: string;
   employeeName: string;

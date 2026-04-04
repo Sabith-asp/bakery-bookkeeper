@@ -14,6 +14,7 @@ const MODULE_LABELS: Record<string, string> = {
   Employees: "Employees",
   Divisions: "Divisions",
   Notifications: "Notifications",
+  Debts: "Debts",
 };
 
 const AdminDashboardPage = () => {

@@ -24,6 +24,9 @@ import EmployeesPage from "@/pages/EmployeesPage";
 import EmployeeWagePage from "@/pages/EmployeeWagePage";
 import DivisionsPage from "@/pages/DivisionsPage";
 import NotificationSettingsPage from "@/pages/NotificationSettingsPage";
+import DebtPage from "@/pages/DebtPage";
+import AddDebtPage from "@/pages/AddDebtPage";
+import DebtDetailPage from "@/pages/DebtDetailPage";
 import AdminDashboardPage from "@/pages/admin/AdminDashboardPage";
 import CreateOrganizationPage from "@/pages/admin/CreateOrganizationPage";
 import OrganizationDetailPage from "@/pages/admin/OrganizationDetailPage";
@@ -89,6 +92,11 @@ const App = () => {
 
             <Route path="/divisions"              element={<Mod module="Divisions"><DivisionsPage /></Mod>} />
             <Route path="/notifications"          element={<Mod module="Notifications"><NotificationSettingsPage /></Mod>} />
+
+            <Route path="/debts"         element={<Mod module="Debts"><DebtPage /></Mod>} />
+            <Route path="/debts/add"     element={<Mod module="Debts"><AddDebtPage /></Mod>} />
+            <Route path="/debts/edit"    element={<Mod module="Debts"><AddDebtPage /></Mod>} />
+            <Route path="/debts/:id"     element={<Mod module="Debts"><DebtDetailPage /></Mod>} />
 
             {/* SuperAdmin only routes */}
             <Route path="/admin"                      element={<Admin><AdminDashboardPage /></Admin>} />
