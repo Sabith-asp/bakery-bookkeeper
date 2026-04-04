@@ -1,5 +1,5 @@
 import apiClient from "./client";
-import type { Organization, OrgUser } from "@/types";
+import type { Division, Organization, OrgUser } from "@/types";
 
 export const adminApi = {
   getOrganizations: async (): Promise<Organization[]> => {
@@ -40,5 +40,15 @@ export const adminApi = {
 
   deleteOrgUser: async (orgId: string, userId: string): Promise<void> => {
     await apiClient.delete(`/admin/organizations/${orgId}/users/${userId}`);
+  },
+
+  getOrgDivisions: async (orgId: string): Promise<Division[]> => {
+    const { data } = await apiClient.get(`/admin/organizations/${orgId}/divisions`);
+    return data;
+  },
+
+  getOrgNotifications: async (orgId: string): Promise<{ subscriptionCount: number; settings: any }> => {
+    const { data } = await apiClient.get(`/admin/organizations/${orgId}/notifications`);
+    return data;
   },
 };

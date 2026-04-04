@@ -18,6 +18,14 @@ export interface AuthState {
   logout: () => void;
 }
 
+export interface NotificationSettings {
+  orgId: string;
+  dailyReminderEnabled: boolean;
+  reminderHour: number;
+  weeklySummaryEnabled: boolean;
+  budgetAlertsEnabled: boolean;
+}
+
 export interface Organization {
   id: string;
   name: string;
@@ -33,6 +41,12 @@ export interface OrgUser {
   role: string;
 }
 
+export interface Division {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
 export interface Income {
   id: string;
   amount: number;
@@ -40,6 +54,8 @@ export interface Income {
   date: string;
   createdAt: string;
   paymentMethod?: string;
+  divisionId?: string;
+  divisionName?: string;
 }
 
 export interface Expense {
@@ -50,6 +66,8 @@ export interface Expense {
   date: string;
   createdAt: string;
   paymentMethod?: string;
+  divisionId?: string;
+  divisionName?: string;
 }
 
 export interface Wage {
@@ -61,6 +79,8 @@ export interface Wage {
   date: string;
   createdAt: string;
   paymentMethod?: string;
+  divisionId?: string;
+  divisionName?: string;
 }
 
 export interface Employee {
@@ -105,6 +125,7 @@ export interface IncomeFormData {
   description: string;
   date: string;
   paymentMethod?: string;
+  divisionId?: string;
 }
 
 export interface ExpenseFormData {
@@ -113,6 +134,7 @@ export interface ExpenseFormData {
   category: string;
   date: string;
   paymentMethod?: string;
+  divisionId?: string;
 }
 
 export interface WageFormData {
@@ -121,4 +143,5 @@ export interface WageFormData {
   amount: number;
   date: string;
   paymentMethod?: string;
+  divisionId?: string;
 }

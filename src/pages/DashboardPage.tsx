@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import PageHeader from "@/components/PageHeader";
 import BottomNav from "@/components/BottomNav";
 import DateRangeFilter from "@/components/DateRangeFilter";
@@ -11,8 +11,10 @@ import { dashboardApi } from "@/api/dashboard";
 import { incomeApi } from "@/api/income";
 import { expenseApi } from "@/api/expense";
 import { wageApi } from "@/api/wage";
+import { divisionApi } from "@/api/division";
 import TrendChart from "@/components/TrendChart";
 import { TrendingUp, TrendingDown, Users, Plus } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 
 const DashboardPage = () => {
@@ -22,32 +24,45 @@ const DashboardPage = () => {
 
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
+  const [divisionId, setDivisionId] = useState("");
 
   const handleDateChange = (start: string, end: string) => {
     setStartDate(start);
     setEndDate(end);
   };
 
-  const { data: summary } = useQuery({
-    queryKey: ["dashboard-summary", startDate, endDate],
-    queryFn: () => dashboardApi.getSummary({ startDate, endDate }),
+  const handleDivisionChange = (id: string) => {
+    setDivisionId((prev) => (prev === id ? "" : id));
+  };
+
+  const { data: divisions = [] } = useQuery({
+    queryKey: ["division"],
+    queryFn: divisionApi.getAll,
+    enabled: hasModule("Divisions"),
   });
 
-  const { data: incomeData } = useQuery({
-    queryKey: ["income", startDate, endDate, "activity"],
-    queryFn: () => incomeApi.getAll({ startDate, endDate, page: 1, pageSize: 20 }),
+  const { data: summary, isLoading: summaryLoading } = useQuery({
+    queryKey: ["dashboard-summary", startDate, endDate, divisionId],
+    queryFn: () => dashboardApi.getSummary({ startDate, endDate, divisionId: divisionId || undefined }),
   });
 
-  const { data: expenseData } = useQuery({
-    queryKey: ["expense", startDate, endDate, "activity"],
-    queryFn: () => expenseApi.getAll({ startDate, endDate, page: 1, pageSize: 20 }),
+  const { data: incomeData, isLoading: incomeLoading } = useQuery({
+    queryKey: ["income", startDate, endDate, divisionId, "activity"],
+    queryFn: () => incomeApi.getAll({ startDate, endDate, page: 1, pageSize: 20, divisionId: divisionId || undefined }),
   });
 
-  const { data: wageData } = useQuery({
-    queryKey: ["wage", startDate, endDate, "activity"],
-    queryFn: () => wageApi.getAll({ startDate, endDate, page: 1, pageSize: 20 }),
+  const { data: expenseData, isLoading: expenseLoading } = useQuery({
+    queryKey: ["expense", startDate, endDate, divisionId, "activity"],
+    queryFn: () => expenseApi.getAll({ startDate, endDate, page: 1, pageSize: 20, divisionId: divisionId || undefined }),
+  });
+
+  const { data: wageData, isLoading: wageLoading } = useQuery({
+    queryKey: ["wage", startDate, endDate, divisionId, "activity"],
+    queryFn: () => wageApi.getAll({ startDate, endDate, page: 1, pageSize: 20, divisionId: divisionId || undefined }),
     enabled: hasModule("Wages"),
   });
+
+  const activityLoading = incomeLoading || expenseLoading || (hasModule("Wages") && wageLoading);
 
   const incomes = incomeData?.items ?? [];
   const expenses = expenseData?.items ?? [];
@@ -62,22 +77,70 @@ const DashboardPage = () => {
       <div className="space-y-4 px-4 pt-2">
         <DateRangeFilter startDate={startDate} endDate={endDate} onDateChange={handleDateChange} />
 
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-[hsl(258_75%_55%)] text-primary-foreground shadow-lg shadow-primary/20 p-5">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_hsl(0_0%_100%/0.12)_0%,_transparent_60%)]" />
-          <p className="text-sm font-medium opacity-80">{isToday ? "Today's" : "Filtered"} Balance</p>
-          <p className="mt-1 text-4xl font-bold font-display tracking-tight">₹{(summary?.balance ?? 0).toLocaleString("en-IN")}</p>
-          <div className="mt-4 flex gap-4 border-t border-white/20 pt-4">
-            <div className="flex-1">
-              <p className="text-[11px] font-medium opacity-70 uppercase tracking-wide">Income</p>
-              <p className="text-base font-bold mt-0.5">₹{(summary?.totalIncome ?? 0).toLocaleString("en-IN")}</p>
-            </div>
-            <div className="w-px bg-white/20" />
-            <div className="flex-1">
-              <p className="text-[11px] font-medium opacity-70 uppercase tracking-wide">Outflow</p>
-              <p className="text-base font-bold mt-0.5">₹{((summary?.totalExpense ?? 0) + (summary?.totalWage ?? 0)).toLocaleString("en-IN")}</p>
+        {/* Division filter */}
+        {divisions.length > 0 && (
+          <div className="flex gap-1.5 flex-wrap">
+            <button
+              onClick={() => handleDivisionChange("")}
+              className={cn(
+                "px-2.5 py-1 text-[11px] font-medium rounded-lg border transition-all",
+                divisionId === ""
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                  : "bg-background text-muted-foreground border-border hover:border-primary/40"
+              )}
+            >
+              All
+            </button>
+            {divisions.map((d) => (
+              <button
+                key={d.id}
+                onClick={() => handleDivisionChange(d.id)}
+                className={cn(
+                  "px-2.5 py-1 text-[11px] font-medium rounded-lg border transition-all",
+                  divisionId === d.id
+                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                    : "bg-background text-muted-foreground border-border hover:border-primary/40"
+                )}
+              >
+                {d.name}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {summaryLoading ? (
+          <div className="rounded-2xl bg-muted/60 p-5 space-y-3">
+            <Skeleton className="h-4 w-28 rounded-md" />
+            <Skeleton className="h-10 w-40 rounded-md" />
+            <div className="flex gap-4 pt-3 border-t border-border">
+              <div className="flex-1 space-y-1.5">
+                <Skeleton className="h-3 w-14 rounded-md" />
+                <Skeleton className="h-5 w-20 rounded-md" />
+              </div>
+              <div className="flex-1 space-y-1.5">
+                <Skeleton className="h-3 w-14 rounded-md" />
+                <Skeleton className="h-5 w-20 rounded-md" />
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-[hsl(258_75%_55%)] text-primary-foreground shadow-lg shadow-primary/20 p-5">
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_hsl(0_0%_100%/0.12)_0%,_transparent_60%)]" />
+            <p className="text-sm font-medium opacity-80">{isToday ? "Today's" : "Filtered"} Balance</p>
+            <p className="mt-1 text-4xl font-bold font-display tracking-tight">₹{(summary?.balance ?? 0).toLocaleString("en-IN")}</p>
+            <div className="mt-4 flex gap-4 border-t border-white/20 pt-4">
+              <div className="flex-1">
+                <p className="text-[11px] font-medium opacity-70 uppercase tracking-wide">Income</p>
+                <p className="text-base font-bold mt-0.5">₹{(summary?.totalIncome ?? 0).toLocaleString("en-IN")}</p>
+              </div>
+              <div className="w-px bg-white/20" />
+              <div className="flex-1">
+                <p className="text-[11px] font-medium opacity-70 uppercase tracking-wide">Outflow</p>
+                <p className="text-base font-bold mt-0.5">₹{((summary?.totalExpense ?? 0) + (summary?.totalWage ?? 0)).toLocaleString("en-IN")}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div>
           <h2 className="mb-2.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Quick Add</h2>
@@ -122,7 +185,22 @@ const DashboardPage = () => {
           </h2>
           <Card className="shadow-sm">
             <CardContent className="divide-y divide-border py-0">
-              {incomes.length === 0 && expenses.length === 0 && wages.length === 0 ? (
+              {activityLoading ? (
+                <>
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="flex items-center justify-between py-3 px-1">
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="h-9 w-9 rounded-xl shrink-0" />
+                        <div className="space-y-1.5">
+                          <Skeleton className="h-3.5 w-32 rounded-md" />
+                          <Skeleton className="h-3 w-20 rounded-md" />
+                        </div>
+                      </div>
+                      <Skeleton className="h-4 w-16 rounded-md" />
+                    </div>
+                  ))}
+                </>
+              ) : incomes.length === 0 && expenses.length === 0 && wages.length === 0 ? (
                 <p className="py-8 text-center text-sm text-muted-foreground">No transactions found</p>
               ) : (
                 <>

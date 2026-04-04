@@ -42,8 +42,8 @@ const LoginPage = () => {
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
             <Wrench className="h-7 w-7 text-primary" />
           </div>
-          <CardTitle className="font-display text-2xl">BakeryServ</CardTitle>
-          <CardDescription>Equipment Service Finance Manager</CardDescription>
+          <CardTitle className="font-display text-2xl">Fynlo</CardTitle>
+          <CardDescription>Business Finance Manager</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

@@ -5,7 +5,7 @@ import type { Income, IncomeFormData, PagedResult } from "@/types";
 const USE_DUMMY = false;
 
 export const incomeApi = {
-  getAll: async (params?: { startDate?: string; endDate?: string; page?: number; pageSize?: number }): Promise<PagedResult<Income>> => {
+  getAll: async (params?: { startDate?: string; endDate?: string; page?: number; pageSize?: number; divisionId?: string }): Promise<PagedResult<Income>> => {
     if (USE_DUMMY) {
       const items = filterByDate(dummyIncomes, params?.startDate, params?.endDate);
       return { items, totalCount: items.length, page: 1, pageSize: items.length || 20, totalPages: 1 };

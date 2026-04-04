@@ -1,20 +1,37 @@
 {
-  "short_name": "BakeFix",
-  "name": "Bake Fix App",
+  "name": "Fynlo",
+  "short_name": "Fynlo",
+  "description": "Financial management for your business",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
+  "categories": ["finance", "business", "productivity"],
   "icons": [
     {
-      "src": "https://5.imimg.com/data5/SELLER/Default/2024/5/420956970/ZL/KO/RH/31444973/electric-2-deck-4-tray-oven-500x500.png",
+      "src": "https://file.aiquickdraw.com/imgcompressed/img/compressed_c913ea40964229321e07863e249ca8e5.webp",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "https://5.imimg.com/data5/SELLER/Default/2025/5/508352823/VR/PG/VG/59459720/commercial-spiral-mixer-40l-500x500.png",
+      "src": "https://downloadr2.apkmirror.com/wp-content/uploads/2018/08/5b63527fabbb1.png",
       "sizes": "512x512",
       "type": "image/png"
     }
   ],
-  "start_url": ".",
-  "display": "standalone",
-  "theme_color": "#ffffff",
-  "background_color": "#ffffff"
+  "shortcuts": [
+    {
+      "name": "Add Expense",
+      "short_name": "Expense",
+      "url": "/expenses/add",
+      "description": "Record a new expense"
+    },
+    {
+      "name": "Add Income",
+      "short_name": "Income",
+      "url": "/income/add",
+      "description": "Record a new income"
+    }
+  ]
 }

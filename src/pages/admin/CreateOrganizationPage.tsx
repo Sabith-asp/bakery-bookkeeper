@@ -74,7 +74,7 @@ const CreateOrganizationPage = () => {
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-foreground">Organization Name</label>
                 <Input
-                  placeholder="e.g. Sunrise Bakery"
+                  placeholder="e.g. Sunrise Traders"
                   value={name}
                   onChange={(e) => handleNameChange(e.target.value)}
                   maxLength={255}
@@ -85,7 +85,7 @@ const CreateOrganizationPage = () => {
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-foreground">Slug</label>
                 <Input
-                  placeholder="e.g. sunrise-bakery"
+                  placeholder="e.g. sunrise-traders"
                   value={slug}
                   onChange={(e) => handleSlugChange(e.target.value)}
                   maxLength={100}
@@ -99,7 +99,7 @@ const CreateOrganizationPage = () => {
               <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-1">
                 <p className="text-xs font-medium text-foreground">Default module access</p>
                 <p className="text-xs text-muted-foreground">
-                  Income and Expenses are enabled by default. Wages and Employees must be toggled on manually after creation.
+                  Income and Expenses are enabled by default. Wages, Employees, Divisions, and Notifications must be toggled on manually after creation.
                 </p>
               </div>
 

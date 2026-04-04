@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -5,6 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
 import GlobalApiLoader from "@/components/GlobalApiLoader";
+import PwaUpdatePrompt from "@/components/PwaUpdatePrompt";
+import SplashScreen from "@/components/SplashScreen";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import OrgRoute from "@/components/OrgRoute";
 import ModuleRoute from "@/components/ModuleRoute";
@@ -19,6 +22,8 @@ import WagePage from "@/pages/WagePage";
 import AddWagePage from "@/pages/AddWagePage";
 import EmployeesPage from "@/pages/EmployeesPage";
 import EmployeeWagePage from "@/pages/EmployeeWagePage";
+import DivisionsPage from "@/pages/DivisionsPage";
+import NotificationSettingsPage from "@/pages/NotificationSettingsPage";
 import AdminDashboardPage from "@/pages/admin/AdminDashboardPage";
 import CreateOrganizationPage from "@/pages/admin/CreateOrganizationPage";
 import OrganizationDetailPage from "@/pages/admin/OrganizationDetailPage";
@@ -48,11 +53,15 @@ const Admin = ({ children }: { children: React.ReactNode }) => (
   <ProtectedRoute><AdminRoute>{children}</AdminRoute></ProtectedRoute>
 );
 
-const App = () => (
+const App = () => {
+  const [splashDone, setSplashDone] = useState(false);
+  return (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
+        {!splashDone && <SplashScreen onDone={() => setSplashDone(true)} />}
         <GlobalApiLoader />
+        <PwaUpdatePrompt />
         <Toaster />
         <Sonner />
         <BrowserRouter>
@@ -78,6 +87,9 @@ const App = () => (
             <Route path="/employees"              element={<Mod module="Employees"><EmployeesPage /></Mod>} />
             <Route path="/employees/:id/wages"    element={<Mod module="Employees"><EmployeeWagePage /></Mod>} />
 
+            <Route path="/divisions"              element={<Mod module="Divisions"><DivisionsPage /></Mod>} />
+            <Route path="/notifications"          element={<Mod module="Notifications"><NotificationSettingsPage /></Mod>} />
+
             {/* SuperAdmin only routes */}
             <Route path="/admin"                      element={<Admin><AdminDashboardPage /></Admin>} />
             <Route path="/admin/organizations/new"    element={<Admin><CreateOrganizationPage /></Admin>} />
@@ -89,6 +101,7 @@ const App = () => (
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;

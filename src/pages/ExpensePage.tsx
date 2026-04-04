@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { expenseApi } from "@/api/expense";
+import { divisionApi } from "@/api/division";
 import type { Expense } from "@/types";
+import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +17,8 @@ import BottomNav from "@/components/BottomNav";
 import { useToast } from "@/hooks/use-toast";
 import { useApiLoading } from "@/state/apiLoading";
 import { Plus, TrendingDown, Trash2, Pencil, ChevronLeft, ChevronRight, X } from "lucide-react";
-import { EXPENSE_CATEGORIES } from "@/config/expenseCategories";
+import { COMMON_EXPENSE_CATEGORIES, EXPENSE_CATEGORIES } from "@/config/expenseCategories";
+import EmptyState from "@/components/EmptyState";
 
 const PAGE_SIZE = 20;
 
@@ -24,10 +27,13 @@ const ExpensePage = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isApiLoading = useApiLoading();
+  const { hasModule } = useAuth();
 
   const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
   const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
   const [category, setCategory] = useState("");
+  const [divisionId, setDivisionId] = useState("");
+  const [showAllCategories, setShowAllCategories] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Expense | null>(null);
   const [page, setPage] = useState(1);
 
@@ -42,9 +48,20 @@ const ExpensePage = () => {
     setCategory((prev) => (prev === c ? "" : c));
   };
 
+  const handleDivisionChange = (id: string) => {
+    setPage(1);
+    setDivisionId((prev) => (prev === id ? "" : id));
+  };
+
+  const { data: divisions = [] } = useQuery({
+    queryKey: ["division"],
+    queryFn: divisionApi.getAll,
+    enabled: hasModule("Divisions"),
+  });
+
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: ["expense", startDate, endDate, page, PAGE_SIZE, category],
-    queryFn: () => expenseApi.getAll({ startDate, endDate, page, pageSize: PAGE_SIZE, category: category || undefined }),
+    queryKey: ["expense", startDate, endDate, page, PAGE_SIZE, category, divisionId],
+    queryFn: () => expenseApi.getAll({ startDate, endDate, page, pageSize: PAGE_SIZE, category: category || undefined, divisionId: divisionId || undefined }),
     placeholderData: keepPreviousData,
   });
 
@@ -76,9 +93,40 @@ const ExpensePage = () => {
           </CardContent>
         </Card>
 
+        {/* Division filter */}
+        {divisions.length > 0 && (
+          <div className="flex gap-1.5 flex-wrap">
+            <button
+              onClick={() => handleDivisionChange("")}
+              className={cn(
+                "px-2.5 py-1 text-[11px] font-medium rounded-lg border transition-all",
+                divisionId === ""
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                  : "bg-background text-muted-foreground border-border hover:border-primary/40"
+              )}
+            >
+              All
+            </button>
+            {divisions.map((d) => (
+              <button
+                key={d.id}
+                onClick={() => handleDivisionChange(d.id)}
+                className={cn(
+                  "px-2.5 py-1 text-[11px] font-medium rounded-lg border transition-all",
+                  divisionId === d.id
+                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                    : "bg-background text-muted-foreground border-border hover:border-primary/40"
+                )}
+              >
+                {d.name}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Category filter */}
         <div className="flex gap-1.5 flex-wrap">
-          {EXPENSE_CATEGORIES.map((c) => (
+          {(showAllCategories ? EXPENSE_CATEGORIES : COMMON_EXPENSE_CATEGORIES).map((c) => (
             <button
               key={c}
               onClick={() => handleCategoryChange(c)}
@@ -92,6 +140,12 @@ const ExpensePage = () => {
               {c}
             </button>
           ))}
+          <button
+            onClick={() => setShowAllCategories((v) => !v)}
+            className="px-2.5 py-1 text-[11px] font-medium rounded-lg border border-dashed border-muted-foreground/40 text-muted-foreground hover:text-foreground transition-all"
+          >
+            {showAllCategories ? "Less" : `+${EXPENSE_CATEGORIES.length - COMMON_EXPENSE_CATEGORIES.length} more`}
+          </button>
           {category && (
             <button
               onClick={() => handleCategoryChange("")}
@@ -124,7 +178,7 @@ const ExpensePage = () => {
                 ))}
               </>
             ) : items.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">No expense entries found</p>
+              <EmptyState message="No expense entries found" />
             ) : (
               <>
                 {items.map((item) => (

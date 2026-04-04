@@ -3,8 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { wageApi } from "@/api/wage";
+import { divisionApi } from "@/api/division";
 import type { Wage } from "@/types";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
+import EmptyState from "@/components/EmptyState";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,9 +26,11 @@ const WagePage = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isApiLoading = useApiLoading();
+  const { hasModule } = useAuth();
 
   const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
   const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
+  const [divisionId, setDivisionId] = useState("");
   const [pendingDelete, setPendingDelete] = useState<Wage | null>(null);
   const [page, setPage] = useState(1);
 
@@ -35,9 +40,20 @@ const WagePage = () => {
     setEndDate(e);
   };
 
+  const handleDivisionChange = (id: string) => {
+    setPage(1);
+    setDivisionId((prev) => (prev === id ? "" : id));
+  };
+
+  const { data: divisions = [] } = useQuery({
+    queryKey: ["division"],
+    queryFn: divisionApi.getAll,
+    enabled: hasModule("Divisions"),
+  });
+
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: ["wage", startDate, endDate, page, PAGE_SIZE],
-    queryFn: () => wageApi.getAll({ startDate, endDate, page, pageSize: PAGE_SIZE }),
+    queryKey: ["wage", startDate, endDate, page, PAGE_SIZE, divisionId],
+    queryFn: () => wageApi.getAll({ startDate, endDate, page, pageSize: PAGE_SIZE, divisionId: divisionId || undefined }),
     placeholderData: keepPreviousData,
   });
 
@@ -61,6 +77,37 @@ const WagePage = () => {
 
       <div className="space-y-4 px-4 pt-2">
         <DateRangeFilter startDate={startDate} endDate={endDate} onDateChange={handleDateChange} />
+
+        {/* Division filter */}
+        {divisions.length > 0 && (
+          <div className="flex gap-1.5 flex-wrap">
+            <button
+              onClick={() => handleDivisionChange("")}
+              className={cn(
+                "px-2.5 py-1 text-[11px] font-medium rounded-lg border transition-all",
+                divisionId === ""
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                  : "bg-background text-muted-foreground border-border hover:border-primary/40"
+              )}
+            >
+              All
+            </button>
+            {divisions.map((d) => (
+              <button
+                key={d.id}
+                onClick={() => handleDivisionChange(d.id)}
+                className={cn(
+                  "px-2.5 py-1 text-[11px] font-medium rounded-lg border transition-all",
+                  divisionId === d.id
+                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                    : "bg-background text-muted-foreground border-border hover:border-primary/40"
+                )}
+              >
+                {d.name}
+              </button>
+            ))}
+          </div>
+        )}
 
         <Card className="border-wage/30 bg-wage/5 shadow-sm">
           <CardContent className="py-3">
@@ -91,7 +138,7 @@ const WagePage = () => {
                 ))}
               </>
             ) : items.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">No wage entries found</p>
+              <EmptyState message="No wage entries found" />
             ) : (
               <>
                 {items.map((item) => (

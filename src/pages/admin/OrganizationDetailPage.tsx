@@ -11,18 +11,20 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, CheckCircle2, XCircle, Plus, Trash2, UserCircle2, Check, X } from "lucide-react";
+import { ArrowLeft, CheckCircle2, XCircle, Plus, Trash2, UserCircle2, Check, X, Layers, Bell } from "lucide-react";
 import { useState } from "react";
 import type { OrgUser } from "@/types";
 
-const ALL_MODULES = ["Income", "Expenses", "Wages", "Employees"] as const;
+const ALL_MODULES = ["Income", "Expenses", "Wages", "Employees", "Divisions", "Notifications"] as const;
 type Module = (typeof ALL_MODULES)[number];
 
 const MODULE_DESCRIPTIONS: Record<Module, string> = {
-  Income:    "Track all revenue and incoming payments",
-  Expenses:  "Track all outgoing expenses by category",
-  Wages:     "Manage employee wage payments",
-  Employees: "Manage the employee roster",
+  Income:        "Track all revenue and incoming payments",
+  Expenses:      "Track all outgoing expenses by category",
+  Wages:         "Manage employee wage payments",
+  Employees:     "Manage the employee roster",
+  Divisions:     "Organise records by division (e.g. Home, Office)",
+  Notifications: "Push notification reminders and budget alerts",
 };
 
 const ROLES = [
@@ -55,6 +57,18 @@ const OrganizationDetailPage = () => {
     queryKey: ["admin-org-users", id],
     queryFn: () => adminApi.getOrgUsers(id!),
     enabled: !!id,
+  });
+
+  const { data: divisions = [], isLoading: divisionsLoading } = useQuery({
+    queryKey: ["admin-org-divisions", id],
+    queryFn: () => adminApi.getOrgDivisions(id!),
+    enabled: !!id,
+  });
+
+  const { data: notifData } = useQuery({
+    queryKey: ["admin-org-notifications", id],
+    queryFn: () => adminApi.getOrgNotifications(id!),
+    enabled: !!id && !!org?.enabledModules.includes("Notifications"),
   });
 
   // ── Mutations ─────────────────────────────────────────────────────────────
@@ -285,24 +299,56 @@ const OrganizationDetailPage = () => {
               {ALL_MODULES.map((module) => {
                 const isEnabled = org.enabledModules.includes(module);
                 return (
-                  <div key={module} className="flex items-center justify-between py-3.5 px-1 -mx-1">
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{module}</p>
-                      <p className="text-xs text-muted-foreground">{MODULE_DESCRIPTIONS[module]}</p>
+                  <div key={module} className="py-3.5 px-1 -mx-1">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{module}</p>
+                        <p className="text-xs text-muted-foreground">{MODULE_DESCRIPTIONS[module]}</p>
+                      </div>
+                      <button
+                        onClick={() => toggleModuleMutation.mutate({ module, enabled: !isEnabled })}
+                        disabled={isBusy}
+                        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 ${
+                          isEnabled ? "bg-primary" : "bg-input"
+                        }`}
+                        role="switch"
+                        aria-checked={isEnabled}
+                      >
+                        <span className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+                          isEnabled ? "translate-x-6" : "translate-x-1"
+                        }`} />
+                      </button>
                     </div>
-                    <button
-                      onClick={() => toggleModuleMutation.mutate({ module, enabled: !isEnabled })}
-                      disabled={isBusy}
-                      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 ${
-                        isEnabled ? "bg-primary" : "bg-input"
-                      }`}
-                      role="switch"
-                      aria-checked={isEnabled}
-                    >
-                      <span className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
-                        isEnabled ? "translate-x-6" : "translate-x-1"
-                      }`} />
-                    </button>
+                    {module === "Divisions" && isEnabled && (
+                      <div className="mt-2.5 space-y-1">
+                        {divisionsLoading ? (
+                          <p className="text-xs text-muted-foreground">Loading...</p>
+                        ) : divisions.length === 0 ? (
+                          <p className="text-xs text-muted-foreground">No divisions created yet</p>
+                        ) : (
+                          divisions.map((d) => (
+                            <div key={d.id} className="flex items-center gap-2">
+                              <Layers className="h-3 w-3 text-primary shrink-0" />
+                              <span className="text-xs text-foreground">{d.name}</span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                    {module === "Notifications" && isEnabled && notifData && (
+                      <div className="mt-2.5 flex flex-wrap gap-3">
+                        <div className="flex items-center gap-1.5">
+                          <Bell className="h-3 w-3 text-primary shrink-0" />
+                          <span className="text-xs text-foreground">{notifData.subscriptionCount} device{notifData.subscriptionCount !== 1 ? "s" : ""} subscribed</span>
+                        </div>
+                        {notifData.settings?.dailyReminderEnabled && (
+                          <span className="text-xs text-muted-foreground">Daily reminder on</span>
+                        )}
+                        {notifData.settings?.weeklySummaryEnabled && (
+                          <span className="text-xs text-muted-foreground">Weekly summary on</span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -327,6 +373,12 @@ const OrganizationDetailPage = () => {
               <span className="text-xs text-muted-foreground">Active modules</span>
               <span className="text-xs text-foreground">{org.enabledModules.length} / {ALL_MODULES.length}</span>
             </div>
+            {org.enabledModules.includes("Divisions") && (
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Divisions created</span>
+                <span className="text-xs text-foreground">{divisions.length}</span>
+              </div>
+            )}
           </CardContent>
         </Card>
 

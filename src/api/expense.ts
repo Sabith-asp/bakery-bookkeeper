@@ -5,7 +5,7 @@ import type { Expense, ExpenseFormData, PagedResult } from "@/types";
 const USE_DUMMY = false;
 
 export const expenseApi = {
-  getAll: async (params?: { startDate?: string; endDate?: string; page?: number; pageSize?: number; category?: string }): Promise<PagedResult<Expense>> => {
+  getAll: async (params?: { startDate?: string; endDate?: string; page?: number; pageSize?: number; category?: string; divisionId?: string }): Promise<PagedResult<Expense>> => {
     if (USE_DUMMY) {
       const items = filterByDate(dummyExpenses, params?.startDate, params?.endDate);
       return { items, totalCount: items.length, page: 1, pageSize: items.length || 20, totalPages: 1 };

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { wageApi } from "@/api/wage";
+import EmptyState from "@/components/EmptyState";
 import { employeeApi } from "@/api/employee";
 import type { Wage } from "@/types";
 import { cn } from "@/lib/utils";
@@ -122,7 +123,7 @@ const EmployeeWagePage = () => {
                 ))}
               </>
             ) : items.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">No wage entries found</p>
+              <EmptyState message="No wage entries found" />
             ) : (
               <>
                 {items.map((item) => (
