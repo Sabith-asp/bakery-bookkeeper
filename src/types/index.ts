@@ -185,3 +185,79 @@ export interface WageFormData {
   paymentMethod?: string;
   divisionId?: string;
 }
+
+export interface ProductCategory {
+  id: string;
+  organizationId: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface Product {
+  id: string;
+  organizationId: string;
+  categoryId?: string;
+  categoryName?: string;
+  name: string;
+  description?: string;
+  sku?: string;
+  unit: string;
+  costPrice: number;
+  sellingPrice: number;
+  currentStock: number;
+  lowStockAlert?: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StockTransaction {
+  id: string;
+  organizationId: string;
+  productId: string;
+  productName?: string;
+  productUnit?: string;
+  type: "Purchase" | "Sale";
+  quantity: number;
+  unitPrice: number;
+  totalAmount: number;
+  supplierOrCustomer?: string;
+  paymentMethod?: string;
+  divisionId?: string;
+  divisionName?: string;
+  note?: string;
+  date: string;
+  createdAt: string;
+}
+
+export interface InventorySummary {
+  totalProducts: number;
+  lowStockCount: number;
+  outOfStockCount: number;
+  totalInventoryValue: number;
+  todaySalesAmount: number;
+  todaySalesCount: number;
+}
+
+export interface ProductFormData {
+  categoryId?: string;
+  name: string;
+  description?: string;
+  sku?: string;
+  unit: string;
+  costPrice: number;
+  sellingPrice: number;
+  lowStockAlert?: number;
+}
+
+export interface StockTransactionFormData {
+  productId: string;
+  type: "Purchase" | "Sale";
+  quantity: number;
+  unitPrice: number;
+  supplierOrCustomer?: string;
+  paymentMethod?: string;
+  divisionId?: string;
+  note?: string;
+  date: string;
+}

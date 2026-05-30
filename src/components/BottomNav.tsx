@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, TrendingUp, TrendingDown, Wallet, UserCog, ShieldCheck, Layers, Bell, Banknote } from "lucide-react";
+import { LayoutDashboard, TrendingUp, TrendingDown, Wallet, UserCog, ShieldCheck, Layers, Bell, Banknote, Package } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 const BottomNav = () => {
@@ -49,6 +49,12 @@ const BottomNav = () => {
       label: "Debts",
       icon: Banknote,
       visible: hasModule("Debts"),
+    },
+    {
+      path: "/inventory",
+      label: "Inventory",
+      icon: Package,
+      visible: hasModule("Inventory"),
     },
     {
       path: "/notifications",

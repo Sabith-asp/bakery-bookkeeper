@@ -30,6 +30,9 @@ import DebtDetailPage from "@/pages/DebtDetailPage";
 import AdminDashboardPage from "@/pages/admin/AdminDashboardPage";
 import CreateOrganizationPage from "@/pages/admin/CreateOrganizationPage";
 import OrganizationDetailPage from "@/pages/admin/OrganizationDetailPage";
+import InventoryPage from "@/pages/inventory/InventoryPage";
+import AddProductPage from "@/pages/inventory/AddProductPage";
+import AddTransactionPage from "@/pages/inventory/AddTransactionPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -97,6 +100,11 @@ const App = () => {
             <Route path="/debts/add"     element={<Mod module="Debts"><AddDebtPage /></Mod>} />
             <Route path="/debts/edit"    element={<Mod module="Debts"><AddDebtPage /></Mod>} />
             <Route path="/debts/:id"     element={<Mod module="Debts"><DebtDetailPage /></Mod>} />
+
+            <Route path="/inventory"                    element={<Mod module="Inventory"><InventoryPage /></Mod>} />
+            <Route path="/inventory/products/add"       element={<Mod module="Inventory"><AddProductPage /></Mod>} />
+            <Route path="/inventory/products/edit"      element={<Mod module="Inventory"><AddProductPage /></Mod>} />
+            <Route path="/inventory/transactions/add"   element={<Mod module="Inventory"><AddTransactionPage /></Mod>} />
 
             {/* SuperAdmin only routes */}
             <Route path="/admin"                      element={<Admin><AdminDashboardPage /></Admin>} />

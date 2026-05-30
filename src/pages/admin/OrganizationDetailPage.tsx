@@ -15,7 +15,7 @@ import { ArrowLeft, CheckCircle2, XCircle, Plus, Trash2, UserCircle2, Check, X, 
 import { useState } from "react";
 import type { OrgUser } from "@/types";
 
-const ALL_MODULES = ["Income", "Expenses", "Wages", "Employees", "Divisions", "Notifications", "Debts"] as const;
+const ALL_MODULES = ["Income", "Expenses", "Wages", "Employees", "Divisions", "Notifications", "Debts", "Inventory"] as const;
 type Module = (typeof ALL_MODULES)[number];
 
 const MODULE_DESCRIPTIONS: Record<Module, string> = {
@@ -26,6 +26,7 @@ const MODULE_DESCRIPTIONS: Record<Module, string> = {
   Divisions:     "Organise records by division (e.g. Home, Office)",
   Notifications: "Push notification reminders and budget alerts",
   Debts:         "Track money you owe and money owed to you, with payment history",
+  Inventory:     "Manage products, stock levels, purchases and sales",
 };
 
 const ROLES = [
