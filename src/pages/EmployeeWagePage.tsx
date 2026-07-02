@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { wageApi } from "@/api/wage";
+import { useOrgTimezone, shortDate, todayInTz } from "@/lib/dateUtils";
 import EmptyState from "@/components/EmptyState";
 import { employeeApi } from "@/api/employee";
 import type { Wage } from "@/types";
@@ -26,8 +27,10 @@ const EmployeeWagePage = () => {
   const queryClient = useQueryClient();
   const isApiLoading = useApiLoading();
 
-  const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
-  const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
+  const orgTimezone = useOrgTimezone();
+  const todayLocal = new Date(todayInTz(orgTimezone) + "T00:00:00");
+  const [startDate, setStartDate] = useState(format(startOfMonth(todayLocal), "yyyy-MM-dd"));
+  const [endDate, setEndDate] = useState(format(endOfMonth(todayLocal), "yyyy-MM-dd"));
   const [pendingDelete, setPendingDelete] = useState<Wage | null>(null);
   const [page, setPage] = useState(1);
 
@@ -91,7 +94,7 @@ const EmployeeWagePage = () => {
       </div>
 
       <div className="space-y-4 px-4 pt-4">
-        <DateRangeFilter startDate={startDate} endDate={endDate} onDateChange={handleDateChange} />
+        <DateRangeFilter startDate={startDate} endDate={endDate} onDateChange={handleDateChange} orgTimezone={orgTimezone} />
 
         <Card className="border-wage/30 bg-wage/5 shadow-sm">
           <CardContent className="py-3">
@@ -133,7 +136,7 @@ const EmployeeWagePage = () => {
                         {item.description || "Wage payment"}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {new Date(item.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", year: "numeric" })}
+                        {shortDate(item.date, orgTimezone)}
                       </p>
                     </div>
                     <div className="flex items-center gap-1">
@@ -188,7 +191,7 @@ const EmployeeWagePage = () => {
               <div className="space-y-1 text-sm">
                 {pendingDelete?.description && <p><span className="font-medium text-foreground">Description:</span> {pendingDelete.description}</p>}
                 <p><span className="font-medium text-foreground">Amount:</span> ₹{pendingDelete?.amount.toLocaleString("en-IN")}</p>
-                <p><span className="font-medium text-foreground">Date:</span> {pendingDelete && new Date(pendingDelete.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}</p>
+                <p><span className="font-medium text-foreground">Date:</span> {pendingDelete && shortDate(pendingDelete.date, orgTimezone)}</p>
                 <p className="pt-1 text-destructive">This action cannot be undone.</p>
               </div>
             </AlertDialogDescription>

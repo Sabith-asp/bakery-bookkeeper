@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { debtApi } from "@/api/debt";
+import { useOrgTimezone, shortDate, formatInTz } from "@/lib/dateUtils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,7 @@ const DebtDetailPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const orgTimezone = useOrgTimezone();
 
   const [showAddPayment, setShowAddPayment] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
@@ -122,8 +124,8 @@ const DebtDetailPage = () => {
     );
   }
 
-  const today = new Date().toISOString().slice(0, 10);
-  const isOverdue = !debt.isSettled && debt.dueDate && debt.dueDate < today;
+  const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: orgTimezone });
+  const isOverdue = !debt.isSettled && debt.dueDate && debt.dueDate < todayStr;
   const isPayable = debt.type === "Payable";
   const progressPct = debt.amount > 0 ? Math.min(100, (debt.paidAmount / debt.amount) * 100) : 0;
 
@@ -194,7 +196,7 @@ const DebtDetailPage = () => {
           {/* Due date */}
           {debt.dueDate && (
             <div className={cn("mt-3 text-xs", debt.isSettled ? "text-muted-foreground" : "opacity-80")}>
-              Due {new Date(debt.dueDate).toLocaleDateString("en-IN", { timeZone: "UTC", day: "2-digit", month: "short", year: "numeric" })}
+              Due {formatInTz(debt.dueDate, { day: "2-digit", month: "short", year: "numeric" }, orgTimezone)}
             </div>
           )}
           {debt.notes && (
@@ -296,7 +298,7 @@ const DebtDetailPage = () => {
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {payment.notes ? `${payment.notes} · ` : ""}
-                          {new Date(payment.date).toLocaleDateString("en-IN", { timeZone: "UTC", day: "2-digit", month: "short", year: "numeric" })}
+                          {shortDate(payment.date, orgTimezone)}
                         </p>
                       </div>
                     </div>

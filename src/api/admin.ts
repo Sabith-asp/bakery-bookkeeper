@@ -12,8 +12,13 @@ export const adminApi = {
     return data;
   },
 
-  createOrganization: async (payload: { name: string; slug: string }): Promise<Organization> => {
+  createOrganization: async (payload: { name: string; slug: string; timezone: string }): Promise<Organization> => {
     const { data } = await apiClient.post("/admin/organizations", payload);
+    return data;
+  },
+
+  updateTimezone: async (id: string, timezone: string): Promise<void> => {
+    const { data } = await apiClient.patch(`/admin/organizations/${id}/timezone`, { timezone });
     return data;
   },
 

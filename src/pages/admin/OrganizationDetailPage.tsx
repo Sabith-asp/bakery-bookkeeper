@@ -4,6 +4,7 @@ import { adminApi } from "@/api/admin";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PageHeader from "@/components/PageHeader";
 import BottomNav from "@/components/BottomNav";
 import { useToast } from "@/hooks/use-toast";
@@ -11,11 +12,12 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, CheckCircle2, XCircle, Plus, Trash2, UserCircle2, Check, X, Layers, Bell } from "lucide-react";
+import { ArrowLeft, CheckCircle2, XCircle, Plus, Trash2, UserCircle2, Check, X, Layers, Bell, Globe, Pencil } from "lucide-react";
 import { useState } from "react";
 import type { OrgUser } from "@/types";
+import { TIMEZONES } from "@/config/timezones";
 
-const ALL_MODULES = ["Income", "Expenses", "Wages", "Employees", "Divisions", "Notifications", "Debts", "Inventory"] as const;
+const ALL_MODULES = ["Income", "Expenses", "Wages", "Employees", "Divisions", "Notifications", "Debts", "Inventory", "Tasks"] as const;
 type Module = (typeof ALL_MODULES)[number];
 
 const MODULE_DESCRIPTIONS: Record<Module, string> = {
@@ -27,6 +29,7 @@ const MODULE_DESCRIPTIONS: Record<Module, string> = {
   Notifications: "Push notification reminders and budget alerts",
   Debts:         "Track money you owe and money owed to you, with payment history",
   Inventory:     "Manage products, stock levels, purchases and sales",
+  Tasks:         "Task management and daily notes for individuals and teams",
 };
 
 const ROLES = [
@@ -46,6 +49,8 @@ const OrganizationDetailPage = () => {
   const [newUsername, setNewUsername]              = useState("");
   const [newPassword, setNewPassword]              = useState("");
   const [newRoleId, setNewRoleId]                  = useState(3);
+  const [editingTimezone, setEditingTimezone]      = useState(false);
+  const [pendingTimezone, setPendingTimezone]      = useState("");
 
   // ── Queries ───────────────────────────────────────────────────────────────
 
@@ -127,6 +132,19 @@ const OrganizationDetailPage = () => {
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error?.response?.data?.message || "Failed to remove user", variant: "destructive" });
+    },
+  });
+
+  const updateTimezoneMutation = useMutation({
+    mutationFn: (timezone: string) => adminApi.updateTimezone(id!, timezone),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-organization", id] });
+      queryClient.invalidateQueries({ queryKey: ["admin-organizations"] });
+      toast({ title: "Timezone updated" });
+      setEditingTimezone(false);
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error?.response?.data?.message || "Failed to update timezone", variant: "destructive" });
     },
   });
 
@@ -381,6 +399,56 @@ const OrganizationDetailPage = () => {
                 <span className="text-xs text-foreground">{divisions.length}</span>
               </div>
             )}
+
+            {/* Timezone row */}
+            <div className="pt-1 border-t border-border">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">Timezone</span>
+                </div>
+                {!editingTimezone ? (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs text-foreground">{org.timezone || "Not set"}</span>
+                    <button
+                      onClick={() => { setPendingTimezone(org.timezone || "Asia/Kolkata"); setEditingTimezone(true); }}
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 flex-1 ml-4">
+                    <Select value={pendingTimezone} onValueChange={setPendingTimezone} disabled={updateTimezoneMutation.isPending}>
+                      <SelectTrigger className="h-7 text-xs flex-1">
+                        <SelectValue placeholder="Select timezone" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TIMEZONES.map((tz) => (
+                          <SelectItem key={tz.value} value={tz.value} className="text-xs">
+                            {tz.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <button
+                      onClick={() => updateTimezoneMutation.mutate(pendingTimezone)}
+                      disabled={updateTimezoneMutation.isPending}
+                      className="text-primary hover:text-primary/80 transition-colors"
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setEditingTimezone(false)}
+                      disabled={updateTimezoneMutation.isPending}
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           </CardContent>
         </Card>
 

@@ -6,6 +6,7 @@ export interface User {
   organizationId: string | null;
   organizationName: string;
   enabledModules: string[];
+  organizationTimezone: string;
 }
 
 export interface AuthState {
@@ -33,6 +34,7 @@ export interface Organization {
   isActive: boolean;
   createdAt: string;
   enabledModules: string[];
+  timezone: string;
 }
 
 export interface OrgUser {
@@ -260,4 +262,85 @@ export interface StockTransactionFormData {
   divisionId?: string;
   note?: string;
   date: string;
+}
+
+export type TaskPriority = 'High' | 'Medium' | 'Low';
+export type TaskStatus = 'Pending' | 'InProgress' | 'Completed';
+export type TaskVisibility = 'Personal' | 'Organisation';
+export type TaskActivityType =
+  | 'Created' | 'StatusChanged' | 'Completed' | 'DateMoved'
+  | 'CarryForward' | 'CommentAdded' | 'Updated' | 'VisibilityChanged';
+
+export interface Task {
+  id: string;
+  organizationId: string;
+  createdByUserId: string;
+  createdByUsername: string;
+  assignedToUserId?: string;
+  assignedToUsername?: string;
+  title: string;
+  description?: string;
+  category: string;
+  priority: TaskPriority;
+  status: TaskStatus;
+  visibility: TaskVisibility;
+  originalTargetDate: string;
+  currentTargetDate: string;
+  completedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  activityLog?: TaskActivity[];
+}
+
+export interface TaskActivity {
+  id: string;
+  taskId: string;
+  performedByUserId: string;
+  performedByUsername: string;
+  activityType: TaskActivityType;
+  oldValue?: string;
+  newValue?: string;
+  comment?: string;
+  createdAt: string;
+}
+
+export interface DailyNote {
+  id: string;
+  organizationId: string;
+  createdByUserId: string;
+  createdByUsername: string;
+  noteDate: string;
+  content: string;
+  title?: string;
+  visibility: TaskVisibility;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NoteFormData {
+  noteDate: string;
+  content: string;
+  title?: string;
+  visibility: TaskVisibility;
+}
+
+export interface UpdateNoteFormData {
+  content: string;
+  title?: string;
+}
+
+export interface TaskFormData {
+  title: string;
+  description?: string;
+  category: string;
+  priority: TaskPriority;
+  visibility: TaskVisibility;
+  currentTargetDate: string;
+  assignedToUserId?: string;
+  assignedToUsername?: string;
+}
+
+export interface TaskSummary {
+  todayCount: number;
+  overdueCount: number;
 }

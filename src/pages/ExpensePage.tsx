@@ -6,6 +6,7 @@ import { expenseApi } from "@/api/expense";
 import { divisionApi } from "@/api/division";
 import type { Expense } from "@/types";
 import { useAuth } from "@/context/AuthContext";
+import { useOrgTimezone, shortDate, numericDate, todayInTz } from "@/lib/dateUtils";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,8 +30,10 @@ const ExpensePage = () => {
   const isApiLoading = useApiLoading();
   const { hasModule } = useAuth();
 
-  const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
-  const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
+  const orgTimezone = useOrgTimezone();
+  const todayLocal = new Date(todayInTz(orgTimezone) + "T00:00:00");
+  const [startDate, setStartDate] = useState(format(startOfMonth(todayLocal), "yyyy-MM-dd"));
+  const [endDate, setEndDate] = useState(format(endOfMonth(todayLocal), "yyyy-MM-dd"));
   const [category, setCategory] = useState("");
   const [divisionId, setDivisionId] = useState("");
   const [showAllCategories, setShowAllCategories] = useState(false);
@@ -84,7 +87,7 @@ const ExpensePage = () => {
       <PageHeader title="Expenses" subtitle="Track your spending" />
 
       <div className="space-y-4 px-4 pt-2">
-        <DateRangeFilter startDate={startDate} endDate={endDate} onDateChange={handleDateChange} />
+        <DateRangeFilter startDate={startDate} endDate={endDate} onDateChange={handleDateChange} orgTimezone={orgTimezone} />
 
         <Card className="border-expense/30 bg-expense/5 shadow-sm">
           <CardContent className="py-3">
@@ -190,7 +193,7 @@ const ExpensePage = () => {
                       <div>
                         <p className="text-sm font-medium text-foreground">{item.description}</p>
                         <p className="text-xs text-muted-foreground">
-                          {item.category}{item.paymentMethod ? ` · ${item.paymentMethod}` : ""} · {new Date(item.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "2-digit", year: "numeric" })}
+                          {item.category}{item.paymentMethod ? ` · ${item.paymentMethod}` : ""} · {numericDate(item.date, orgTimezone)}
                         </p>
                       </div>
                     </div>
@@ -235,7 +238,7 @@ const ExpensePage = () => {
                 <p><span className="font-medium text-foreground">Description:</span> {pendingDelete?.description}</p>
                 <p><span className="font-medium text-foreground">Category:</span> {pendingDelete?.category}</p>
                 <p><span className="font-medium text-foreground">Amount:</span> ₹{pendingDelete?.amount.toLocaleString("en-IN")}</p>
-                <p><span className="font-medium text-foreground">Date:</span> {pendingDelete && new Date(pendingDelete.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}</p>
+                <p><span className="font-medium text-foreground">Date:</span> {pendingDelete && shortDate(pendingDelete.date, orgTimezone)}</p>
                 <p className="pt-1 text-destructive">This action cannot be undone.</p>
               </div>
             </AlertDialogDescription>

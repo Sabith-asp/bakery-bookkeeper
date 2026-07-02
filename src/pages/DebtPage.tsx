@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { debtApi } from "@/api/debt";
+import { useOrgTimezone, formatInTz } from "@/lib/dateUtils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,6 +20,8 @@ const DebtPage = () => {
   const [tab, setTab] = useState<Tab>("Payable");
   const [showSettled, setShowSettled] = useState(false);
 
+  const orgTimezone = useOrgTimezone();
+
   const { data: debts = [], isLoading } = useQuery({
     queryKey: ["debts"],
     queryFn: () => debtApi.getAll(),
@@ -32,10 +35,10 @@ const DebtPage = () => {
 
   const settledCount = debts.filter((d) => d.type === tab && d.isSettled).length;
 
-  const today = new Date().toISOString().slice(0, 10);
-
-  const isOverdue = (debt: Debt) =>
-    !debt.isSettled && debt.dueDate && debt.dueDate < today;
+  const isOverdue = (debt: Debt) => {
+    const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: orgTimezone });
+    return !debt.isSettled && debt.dueDate && debt.dueDate < todayStr;
+  };
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -170,8 +173,8 @@ const DebtPage = () => {
                         </div>
                         <p className="text-xs text-muted-foreground">
                           {debt.dueDate
-                            ? `Due ${new Date(debt.dueDate).toLocaleDateString("en-IN", { timeZone: "UTC", day: "2-digit", month: "short" })}`
-                            : new Date(debt.date).toLocaleDateString("en-IN", { timeZone: "UTC", day: "2-digit", month: "short", year: "numeric" })}
+                            ? `Due ${formatInTz(debt.dueDate, { day: "2-digit", month: "short" }, orgTimezone)}`
+                            : formatInTz(debt.date, { day: "2-digit", month: "short", year: "numeric" }, orgTimezone)}
                         </p>
                       </div>
                     </div>

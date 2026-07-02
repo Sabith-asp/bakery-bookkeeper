@@ -12,7 +12,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const storedUser = localStorage.getItem("user");
     const storedToken = localStorage.getItem("token");
     if (storedUser && storedToken) {
+      // Restore session immediately so the app is usable
       setUser(JSON.parse(storedUser));
+      // Then silently refresh modules from the server (picks up any SuperAdmin changes)
+      authApi.me().then((data) => {
+        const refreshed: User = {
+          ...JSON.parse(storedUser),
+          enabledModules: data.enabledModules ?? [],
+          organizationName: data.organizationName ?? "",
+          organizationTimezone: data.organizationTimezone ?? "",
+        };
+        localStorage.setItem("user", JSON.stringify(refreshed));
+        setUser(refreshed);
+      }).catch(() => {
+        // Token expired or network issue — leave existing session in place
+      });
     }
     setIsLoading(false);
   }, []);
@@ -27,6 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       organizationId: data.organizationId ?? null,
       organizationName: data.organizationName ?? "",
       enabledModules: data.enabledModules ?? [],
+      organizationTimezone: data.organizationTimezone ?? "",
     };
     localStorage.setItem("token", data.token);
     localStorage.setItem("user", JSON.stringify(userData));

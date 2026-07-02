@@ -10,4 +10,9 @@ export const authApi = {
     const { data } = await apiClient.post("/auth/login", { username, password });
     return data;
   },
+
+  me: async () => {
+    const { data } = await apiClient.get("/auth/me");
+    return data;
+  },
 };

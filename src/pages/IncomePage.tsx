@@ -7,6 +7,7 @@ import { divisionApi } from "@/api/division";
 import type { Income } from "@/types";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
+import { useOrgTimezone, shortDate, todayInTz } from "@/lib/dateUtils";
 import EmptyState from "@/components/EmptyState";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,8 +29,10 @@ const IncomePage = () => {
   const isApiLoading = useApiLoading();
   const { hasModule } = useAuth();
 
-  const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
-  const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
+  const orgTimezone = useOrgTimezone();
+  const todayLocal = new Date(todayInTz(orgTimezone) + "T00:00:00");
+  const [startDate, setStartDate] = useState(format(startOfMonth(todayLocal), "yyyy-MM-dd"));
+  const [endDate, setEndDate] = useState(format(endOfMonth(todayLocal), "yyyy-MM-dd"));
   const [divisionId, setDivisionId] = useState("");
   const [pendingDelete, setPendingDelete] = useState<Income | null>(null);
   const [page, setPage] = useState(1);
@@ -76,7 +79,7 @@ const IncomePage = () => {
       <PageHeader title="Income" subtitle="Track your earnings" />
 
       <div className="space-y-4 px-4 pt-2">
-        <DateRangeFilter startDate={startDate} endDate={endDate} onDateChange={handleDateChange} />
+        <DateRangeFilter startDate={startDate} endDate={endDate} onDateChange={handleDateChange} orgTimezone={orgTimezone} />
 
         {/* Division filter */}
         {divisions.length > 0 && (
@@ -150,7 +153,7 @@ const IncomePage = () => {
                       <div>
                         <p className="text-sm font-medium text-foreground">{item.description}</p>
                         <p className="text-xs text-muted-foreground">
-                          {item.paymentMethod ? `${item.paymentMethod} · ` : ""}{new Date(item.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}
+                          {item.paymentMethod ? `${item.paymentMethod} · ` : ""}{shortDate(item.date, orgTimezone)}
                         </p>
                       </div>
                     </div>
@@ -194,7 +197,7 @@ const IncomePage = () => {
               <div className="space-y-1 text-sm">
                 <p><span className="font-medium text-foreground">Description:</span> {pendingDelete?.description}</p>
                 <p><span className="font-medium text-foreground">Amount:</span> ₹{pendingDelete?.amount.toLocaleString("en-IN")}</p>
-                <p><span className="font-medium text-foreground">Date:</span> {pendingDelete && new Date(pendingDelete.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}</p>
+                <p><span className="font-medium text-foreground">Date:</span> {pendingDelete && shortDate(pendingDelete.date, orgTimezone)}</p>
                 <p className="pt-1 text-destructive">This action cannot be undone.</p>
               </div>
             </AlertDialogDescription>

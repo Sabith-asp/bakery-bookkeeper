@@ -6,41 +6,45 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { todayInTz } from "@/lib/dateUtils";
 
 interface DateRangeFilterProps {
   startDate: string;
   endDate: string;
   onDateChange: (start: string, end: string) => void;
+  orgTimezone?: string;
 }
 
-const presets = [
-  { label: "Today", getRange: () => {
-    const d = format(new Date(), "yyyy-MM-dd");
-    return [d, d] as const;
-  }},
-  { label: "Yesterday", getRange: () => {
-    const d = format(subDays(new Date(), 1), "yyyy-MM-dd");
-    return [d, d] as const;
-  }},
-  { label: "This Week", getRange: () => [
-    format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd"),
-    format(endOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd"),
-  ] as const },
-  { label: "This Month", getRange: () => [
-    format(startOfMonth(new Date()), "yyyy-MM-dd"),
-    format(endOfMonth(new Date()), "yyyy-MM-dd"),
-  ] as const },
-  { label: "Last 7 Days", getRange: () => [
-    format(subDays(new Date(), 6), "yyyy-MM-dd"),
-    format(new Date(), "yyyy-MM-dd"),
-  ] as const },
-  { label: "Last 30 Days", getRange: () => [
-    format(subDays(new Date(), 29), "yyyy-MM-dd"),
-    format(new Date(), "yyyy-MM-dd"),
-  ] as const },
-];
+const DateRangeFilter = ({ startDate, endDate, onDateChange, orgTimezone = "UTC" }: DateRangeFilterProps) => {
+  // Get today's date in org timezone
+  const todayStr = todayInTz(orgTimezone);
+  const today = new Date(todayStr + "T00:00:00");
 
-const DateRangeFilter = ({ startDate, endDate, onDateChange }: DateRangeFilterProps) => {
+  const presets = [
+    { label: "Today", getRange: () => {
+      return [todayStr, todayStr] as const;
+    }},
+    { label: "Yesterday", getRange: () => {
+      const d = format(subDays(today, 1), "yyyy-MM-dd");
+      return [d, d] as const;
+    }},
+    { label: "This Week", getRange: () => [
+      format(startOfWeek(today, { weekStartsOn: 1 }), "yyyy-MM-dd"),
+      format(endOfWeek(today, { weekStartsOn: 1 }), "yyyy-MM-dd"),
+    ] as const },
+    { label: "This Month", getRange: () => [
+      format(startOfMonth(today), "yyyy-MM-dd"),
+      format(endOfMonth(today), "yyyy-MM-dd"),
+    ] as const },
+    { label: "Last 7 Days", getRange: () => [
+      format(subDays(today, 6), "yyyy-MM-dd"),
+      todayStr,
+    ] as const },
+    { label: "Last 30 Days", getRange: () => [
+      format(subDays(today, 29), "yyyy-MM-dd"),
+      todayStr,
+    ] as const },
+  ];
   const [open, setOpen] = useState(false);
 
   const fromDate = startDate ? new Date(startDate + "T00:00:00") : undefined;

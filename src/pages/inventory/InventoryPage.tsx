@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { inventoryApi } from "@/api/inventory";
+import { useOrgTimezone, shortDate, todayInTz } from "@/lib/dateUtils";
 import type { Product, ProductCategory, StockTransaction } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -60,9 +61,12 @@ const InventoryPage = () => {
   const [showAddCat, setShowAddCat]       = useState(false);
   const [pendingDeleteCat, setPendingDeleteCat] = useState<ProductCategory | null>(null);
 
+  const orgTimezone = useOrgTimezone();
+  const todayLocal = new Date(todayInTz(orgTimezone) + "T00:00:00");
+
   // ── Transactions tab state ────────────────────────────────────────────────
-  const [startDate, setStartDate]       = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
-  const [endDate, setEndDate]           = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
+  const [startDate, setStartDate]       = useState(format(startOfMonth(todayLocal), "yyyy-MM-dd"));
+  const [endDate, setEndDate]           = useState(format(endOfMonth(todayLocal), "yyyy-MM-dd"));
   const [filterProductId, setFilterProductId] = useState("");
   const [txType, setTxType]             = useState("");
   const [txPage, setTxPage]             = useState(1);
@@ -345,6 +349,7 @@ const InventoryPage = () => {
               startDate={startDate}
               endDate={endDate}
               onDateChange={(s, e) => { setStartDate(s); setEndDate(e); setTxPage(1); }}
+              orgTimezone={orgTimezone}
             />
 
             {/* Product filter */}
@@ -433,7 +438,7 @@ const InventoryPage = () => {
                               {tx.supplierOrCustomer ? ` · ${tx.supplierOrCustomer}` : ""}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {new Date(tx.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", year: "numeric" })}
+                              {shortDate(tx.date, orgTimezone)}
                               {tx.paymentMethod ? ` · ${tx.paymentMethod}` : ""}
                             </p>
                           </div>
