@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import PageHeader from "@/components/PageHeader";
-import BottomNav from "@/components/BottomNav";
+import PageShell from "@/components/PageShell";
 import DateRangeFilter from "@/components/DateRangeFilter";
 import { dashboardApi } from "@/api/dashboard";
 import { incomeApi } from "@/api/income";
@@ -44,22 +43,26 @@ const DashboardPage = () => {
   const { data: summary, isLoading: summaryLoading } = useQuery({
     queryKey: ["dashboard-summary", startDate, endDate, divisionId],
     queryFn: () => dashboardApi.getSummary({ startDate, endDate, divisionId: divisionId || undefined }),
+    placeholderData: keepPreviousData,
   });
 
   const { data: incomeData, isLoading: incomeLoading } = useQuery({
     queryKey: ["income", startDate, endDate, divisionId, "activity"],
     queryFn: () => incomeApi.getAll({ startDate, endDate, page: 1, pageSize: 20, divisionId: divisionId || undefined }),
+    placeholderData: keepPreviousData,
   });
 
   const { data: expenseData, isLoading: expenseLoading } = useQuery({
     queryKey: ["expense", startDate, endDate, divisionId, "activity"],
     queryFn: () => expenseApi.getAll({ startDate, endDate, page: 1, pageSize: 20, divisionId: divisionId || undefined }),
+    placeholderData: keepPreviousData,
   });
 
   const { data: wageData, isLoading: wageLoading } = useQuery({
     queryKey: ["wage", startDate, endDate, divisionId, "activity"],
     queryFn: () => wageApi.getAll({ startDate, endDate, page: 1, pageSize: 20, divisionId: divisionId || undefined }),
     enabled: hasModule("Wages"),
+    placeholderData: keepPreviousData,
   });
 
   const activityLoading = incomeLoading || expenseLoading || (hasModule("Wages") && wageLoading);
@@ -71,11 +74,8 @@ const DashboardPage = () => {
   const isToday = startDate === today && endDate === today;
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <PageHeader title="Dashboard" subtitle={format(new Date(), "EEEE, MMM d")} />
-
-      <div className="space-y-4 px-4 pt-2">
-        <DateRangeFilter startDate={startDate} endDate={endDate} onDateChange={handleDateChange} />
+    <PageShell title="Dashboard" subtitle={format(new Date(), "EEEE, MMM d")}>
+      <DateRangeFilter startDate={startDate} endDate={endDate} onDateChange={handleDateChange} />
 
         {/* Division filter */}
         {divisions.length > 0 && (
@@ -83,7 +83,7 @@ const DashboardPage = () => {
             <button
               onClick={() => handleDivisionChange("")}
               className={cn(
-                "px-2.5 py-1 text-[11px] font-medium rounded-lg border transition-all",
+                "px-3 py-1.5 md:px-3.5 md:py-2 text-[11px] font-medium rounded-lg border transition-all",
                 divisionId === ""
                   ? "bg-primary text-primary-foreground border-primary shadow-sm"
                   : "bg-background text-muted-foreground border-border hover:border-primary/40"
@@ -96,7 +96,7 @@ const DashboardPage = () => {
                 key={d.id}
                 onClick={() => handleDivisionChange(d.id)}
                 className={cn(
-                  "px-2.5 py-1 text-[11px] font-medium rounded-lg border transition-all",
+                  "px-3 py-1.5 md:px-3.5 md:py-2 text-[11px] font-medium rounded-lg border transition-all",
                   divisionId === d.id
                     ? "bg-primary text-primary-foreground border-primary shadow-sm"
                     : "bg-background text-muted-foreground border-border hover:border-primary/40"
@@ -124,7 +124,7 @@ const DashboardPage = () => {
             </div>
           </div>
         ) : (
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-[hsl(258_75%_55%)] text-primary-foreground shadow-lg shadow-primary/20 p-5">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-[hsl(215_90%_48%)] text-primary-foreground shadow-lg shadow-primary/20 p-5">
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_hsl(0_0%_100%/0.12)_0%,_transparent_60%)]" />
             <p className="text-sm font-medium opacity-80">{isToday ? "Today's" : "Filtered"} Balance</p>
             <p className="mt-1 text-4xl font-bold font-display tracking-tight">₹{(summary?.balance ?? 0).toLocaleString("en-IN")}</p>
@@ -149,7 +149,7 @@ const DashboardPage = () => {
               className="flex flex-col items-center gap-2 py-4 rounded-xl bg-card border border-income/20 hover:border-income/50 hover:bg-income/5 active:scale-95 transition-all shadow-sm"
               onClick={() => navigate("/income/add")}
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-income/10">
+              <div className="flex h-10 w-10 md:h-11 md:w-11 items-center justify-center rounded-xl bg-income/10">
                 <Plus className="h-5 w-5 text-income" />
               </div>
               <span className="text-xs font-semibold text-income">Income</span>
@@ -158,7 +158,7 @@ const DashboardPage = () => {
               className="flex flex-col items-center gap-2 py-4 rounded-xl bg-card border border-expense/20 hover:border-expense/50 hover:bg-expense/5 active:scale-95 transition-all shadow-sm"
               onClick={() => navigate("/expenses/add")}
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-expense/10">
+              <div className="flex h-10 w-10 md:h-11 md:w-11 items-center justify-center rounded-xl bg-expense/10">
                 <Plus className="h-5 w-5 text-expense" />
               </div>
               <span className="text-xs font-semibold text-expense">Expense</span>
@@ -168,7 +168,7 @@ const DashboardPage = () => {
                 className="flex flex-col items-center gap-2 py-4 rounded-xl bg-card border border-wage/20 hover:border-wage/50 hover:bg-wage/5 active:scale-95 transition-all shadow-sm"
                 onClick={() => navigate("/wages/add")}
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-wage/10">
+                <div className="flex h-10 w-10 md:h-11 md:w-11 items-center justify-center rounded-xl bg-wage/10">
                   <Users className="h-5 w-5 text-wage" />
                 </div>
                 <span className="text-xs font-semibold text-wage">Wage</span>
@@ -258,10 +258,7 @@ const DashboardPage = () => {
             </CardContent>
           </Card>
         </div>
-      </div>
-
-      <BottomNav />
-    </div>
+    </PageShell>
   );
 };
 

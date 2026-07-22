@@ -20,7 +20,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           ...JSON.parse(storedUser),
           enabledModules: data.enabledModules ?? [],
           organizationName: data.organizationName ?? "",
-          organizationTimezone: data.organizationTimezone ?? "",
         };
         localStorage.setItem("user", JSON.stringify(refreshed));
         setUser(refreshed);
@@ -41,7 +40,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       organizationId: data.organizationId ?? null,
       organizationName: data.organizationName ?? "",
       enabledModules: data.enabledModules ?? [],
-      organizationTimezone: data.organizationTimezone ?? "",
     };
     localStorage.setItem("token", data.token);
     localStorage.setItem("user", JSON.stringify(userData));

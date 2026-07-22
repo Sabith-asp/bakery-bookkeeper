@@ -57,14 +57,10 @@ export default defineConfig(({ mode }) => ({
         categories: ["finance", "business", "productivity"],
         icons: [
           {
-            src: "https://file.aiquickdraw.com/imgcompressed/img/compressed_c913ea40964229321e07863e249ca8e5.webp",
-            sizes: "192x192",
-            type: "image/png",
-          },
-          {
-            src: "https://downloadr2.apkmirror.com/wp-content/uploads/2018/08/5b63527fabbb1.png",
-            sizes: "512x512",
-            type: "image/png",
+            src: "/fynlo-icon.svg",
+            sizes: "any",
+            type: "image/svg+xml",
+            purpose: "any maskable",
           },
         ],
         shortcuts: [
@@ -90,6 +86,18 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-react": ["react", "react-dom", "react-router-dom"],
+          "vendor-query": ["@tanstack/react-query"],
+          "vendor-charts": ["recharts"],
+          "vendor-ui": ["@radix-ui/react-dialog", "@radix-ui/react-select", "@radix-ui/react-tabs", "@radix-ui/react-dropdown-menu"],
+        },
+      },
     },
   },
 }));

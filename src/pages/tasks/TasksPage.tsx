@@ -1,13 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { format, addDays, subDays, parseISO, isToday, isBefore, startOfDay } from "date-fns";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { taskApi } from "@/api/task";
-import type { Task, DailyNote, NoteFormData, UpdateNoteFormData, TaskVisibility } from "@/types";
+import type { Task, DailyNote } from "@/types";
 import { TASK_CATEGORIES } from "@/config/taskCategories";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -21,14 +20,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import PageHeader from "@/components/PageHeader";
-import BottomNav from "@/components/BottomNav";
+import PageShell from "@/components/PageShell";
 import EmptyState from "@/components/EmptyState";
 import DatePickerDrawer from "@/components/DatePickerDrawer";
 import { useToast } from "@/hooks/use-toast";
 import { useApiLoading } from "@/state/apiLoading";
 import { useAuth } from "@/context/AuthContext";
-import { useOrgTimezone, todayInTz, shortDate } from "@/lib/dateUtils";
 import {
   Plus,
   ChevronLeft,
@@ -122,7 +119,7 @@ const TaskCard = ({
         <div className="flex items-start gap-2 flex-wrap">
           <p
             className={cn(
-              "text-sm font-medium leading-snug",
+              "text-sm font-medium leading-snug break-words",
               isCompleted && "line-through text-muted-foreground"
             )}
           >
@@ -175,7 +172,7 @@ const TaskCard = ({
       <div className="shrink-0 flex items-center gap-0.5">
         {!isCompleted && (
           <button
-            className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground transition-colors"
+            className="h-9 w-9 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground transition-colors"
             onClick={(e) => {
               e.stopPropagation();
               onMoveToTomorrow(task);
@@ -186,7 +183,7 @@ const TaskCard = ({
         )}
         {isOwner && (
           <button
-            className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-destructive transition-colors"
+            className="h-9 w-9 flex items-center justify-center rounded-md text-muted-foreground hover:text-destructive transition-colors"
             onClick={(e) => {
               e.stopPropagation();
               onDelete(task);
@@ -200,72 +197,14 @@ const TaskCard = ({
   );
 };
 
-// ── Note Card ─────────────────────────────────────────────────────────────────
-const NoteCard = ({
-  note,
-  currentUserId,
-  orgTimezone,
-  onEdit,
-  onDelete,
-}: {
-  note: DailyNote;
-  currentUserId: string;
-  orgTimezone: string;
-  onEdit: (n: DailyNote) => void;
-  onDelete: (id: string) => void;
-}) => {
-  const isOwner = note.createdByUserId === currentUserId;
-  const timeStr = new Date(note.updatedAt).toLocaleTimeString("en-IN", {
-    timeZone: orgTimezone,
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-  return (
-    <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          {note.title && (
-            <p className="text-sm font-semibold text-foreground truncate">{note.title}</p>
-          )}
-          <p className="text-xs text-foreground leading-relaxed line-clamp-3">{note.content}</p>
-        </div>
-        {isOwner && (
-          <div className="flex gap-1 shrink-0">
-            <button
-              onClick={() => onEdit(note)}
-              className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </button>
-            <button
-              onClick={() => onDelete(note.id)}
-              className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-destructive transition-colors"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        )}
-      </div>
-      <div className="flex items-center gap-1.5">
-        {note.visibility === "Organisation" && (
-          <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400">{note.createdByUsername} ·</span>
-        )}
-        <span className="text-[10px] text-muted-foreground">{timeStr}</span>
-      </div>
-    </div>
-  );
-};
-
 // ── Main Page ─────────────────────────────────────────────────────────────────
 const TasksPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const qc = useQueryClient();
   const isApiLoading = useApiLoading();
-  const { user, hasModule } = useAuth();
+  const { user } = useAuth();
   const currentUserId = user?.id ?? '';
-  const orgTimezone = useOrgTimezone();
 
   const [mainTab, setMainTab] = useState<MainTab>('my');
   const [subTab, setSubTab] = useState<SubTab>('today');
@@ -273,13 +212,10 @@ const TasksPage = () => {
   const [priFilter, setPriFilter] = useState('');
 
   // Notes state
-  const [noteDate, setNoteDate] = useState(todayInTz(orgTimezone));
-  const [showNoteSheet, setShowNoteSheet] = useState(false);
-  const [editingNote, setEditingNote] = useState<DailyNote | null>(null);
-  const [noteTitle, setNoteTitle] = useState('');
-  const [noteContent, setNoteContent] = useState('');
-  const [noteVisibility, setNoteVisibility] = useState<TaskVisibility>('Personal');
-  const [deleteNoteId, setDeleteNoteId] = useState<string | null>(null);
+  const [noteDate, setNoteDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [personalContent, setPersonalContent] = useState('');
+  const [orgContent, setOrgContent] = useState('');
+  const [noteSaving, setNoteSaving] = useState(false);
 
   // Dialogs
   const [pendingComplete, setPendingComplete] = useState<Task | null>(null);
@@ -289,8 +225,8 @@ const TasksPage = () => {
     format(addDays(new Date(), 1), 'yyyy-MM-dd')
   );
 
-  const today = todayInTz(orgTimezone);
-  const tomorrow = format(addDays(new Date(today + "T00:00:00"), 1), 'yyyy-MM-dd');
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd');
 
   // ── Queries ─────────────────────────────────────────────────────────────────
   const myQuery = useQuery({
@@ -317,14 +253,28 @@ const TasksPage = () => {
     enabled: mainTab === 'team',
   });
 
-  const { data: notesData, refetch: refetchNotes } = useQuery({
+  const notesQuery = useQuery({
     queryKey: ['task-notes', noteDate],
-    queryFn: () => taskApi.getNotesByDate(noteDate),
-    enabled: !!noteDate,
+    queryFn: () => taskApi.getNotesByDate(noteDate, true),
+    enabled: mainTab === 'notes',
   });
 
-  const personalNotes = notesData?.personal ?? [];
-  const orgNotes = notesData?.orgNotes ?? [];
+  const recentQuery = useQuery({
+    queryKey: ['task-notes-recent'],
+    queryFn: () => taskApi.getRecentNotes(5),
+    enabled: mainTab === 'notes',
+  });
+
+  // Sync note content from query
+  useEffect(() => {
+    if (notesQuery.data) {
+      setPersonalContent(notesQuery.data.personal?.content ?? '');
+      const myOrgNote = notesQuery.data.orgNotes.find(
+        (n) => n.createdByUserId === currentUserId
+      );
+      setOrgContent(myOrgNote?.content ?? '');
+    }
+  }, [notesQuery.data, currentUserId]);
 
   // ── Mutations ────────────────────────────────────────────────────────────────
   const invalidateTasks = () => {
@@ -367,74 +317,38 @@ const TasksPage = () => {
       toast({ title: 'Error', description: 'Failed to delete task', variant: 'destructive' }),
   });
 
-  const resetNoteSheet = () => {
-    setShowNoteSheet(false);
-    setEditingNote(null);
-    setNoteTitle('');
-    setNoteContent('');
-    setNoteVisibility('Personal');
+  const saveNoteMutation = useMutation({
+    mutationFn: ({
+      date,
+      content,
+      visibility,
+    }: {
+      date: string;
+      content: string;
+      visibility: string;
+    }) => taskApi.upsertNote(date, content, visibility),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['task-notes', noteDate] });
+      qc.invalidateQueries({ queryKey: ['task-notes-recent'] });
+    },
+  });
+
+  const handleSavePersonalNote = () => {
+    if (!personalContent.trim()) return;
+    setNoteSaving(true);
+    saveNoteMutation.mutate(
+      { date: noteDate, content: personalContent, visibility: 'Personal' },
+      { onSettled: () => setNoteSaving(false) }
+    );
   };
 
-  const createNoteMutation = useMutation({
-    mutationFn: (payload: NoteFormData) => taskApi.createNote(payload),
-    onSuccess: () => {
-      refetchNotes();
-      resetNoteSheet();
-      toast({ title: 'Note added' });
-    },
-    onError: (error: any) =>
-      toast({ title: 'Error', description: error?.response?.data?.message || 'Failed to create note', variant: 'destructive' }),
-  });
-
-  const updateNoteMutation = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: UpdateNoteFormData }) =>
-      taskApi.updateNote(id, payload),
-    onSuccess: () => {
-      refetchNotes();
-      resetNoteSheet();
-      toast({ title: 'Note updated' });
-    },
-    onError: (error: any) =>
-      toast({ title: 'Error', description: error?.response?.data?.message || 'Failed to update note', variant: 'destructive' }),
-  });
-
-  const deleteNoteMutation = useMutation({
-    mutationFn: (id: string) => taskApi.deleteNote(id),
-    onSuccess: () => {
-      refetchNotes();
-      setDeleteNoteId(null);
-      toast({ title: 'Note deleted' });
-    },
-    onError: () =>
-      toast({ title: 'Error', description: 'Failed to delete note', variant: 'destructive' }),
-  });
-
-  const handleSaveNote = () => {
-    if (!noteContent.trim()) {
-      toast({ title: 'Content required', description: 'Write something in the note', variant: 'destructive' });
-      return;
-    }
-    if (editingNote) {
-      updateNoteMutation.mutate({
-        id: editingNote.id,
-        payload: { content: noteContent.trim(), title: noteTitle.trim() || undefined },
-      });
-    } else {
-      createNoteMutation.mutate({
-        noteDate,
-        content: noteContent.trim(),
-        title: noteTitle.trim() || undefined,
-        visibility: noteVisibility,
-      });
-    }
-  };
-
-  const handleEditNote = (note: DailyNote) => {
-    setEditingNote(note);
-    setNoteTitle(note.title ?? '');
-    setNoteContent(note.content);
-    setNoteVisibility(note.visibility);
-    setShowNoteSheet(true);
+  const handleSaveOrgNote = () => {
+    if (!orgContent.trim()) return;
+    setNoteSaving(true);
+    saveNoteMutation.mutate(
+      { date: noteDate, content: orgContent, visibility: 'Organisation' },
+      { onSettled: () => setNoteSaving(false) }
+    );
   };
 
   const tasks = mainTab === 'my' ? (myQuery.data ?? []) : (teamQuery.data ?? []);
@@ -459,10 +373,8 @@ const TasksPage = () => {
   })();
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <PageHeader title="Tasks & Notes" subtitle="Manage your work" />
-
-      <div className="px-4 pt-2 space-y-3">
+    <>
+    <PageShell title="Tasks & Notes" subtitle="Manage your work">
 
         {/* Main tab selector */}
         <div className="grid grid-cols-3 rounded-xl border border-border bg-muted/40 p-1 gap-1">
@@ -480,14 +392,14 @@ const TasksPage = () => {
                 setSubTab('today');
               }}
               className={cn(
-                "flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all",
+                "flex items-center justify-center gap-1.5 rounded-lg py-2 px-1 text-xs font-semibold transition-all overflow-hidden",
                 mainTab === tab
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <Icon className="h-3.5 w-3.5" />
-              {label}
+              <Icon className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{label}</span>
             </button>
           ))}
         </div>
@@ -496,13 +408,13 @@ const TasksPage = () => {
         {(mainTab === 'my' || mainTab === 'team') && (
           <>
             {/* Sub-tab */}
-            <div className="flex gap-1 overflow-x-auto scrollbar-hide">
+            <div className="flex flex-wrap gap-1">
               {(['today', 'pending', 'overdue', 'completed'] as SubTab[]).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setSubTab(tab)}
                   className={cn(
-                    "shrink-0 flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold rounded-lg border transition-all capitalize",
+                    "flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold rounded-lg border transition-all capitalize",
                     subTab === tab
                       ? tab === 'overdue'
                         ? "bg-destructive text-white border-destructive shadow-sm"
@@ -542,11 +454,11 @@ const TasksPage = () => {
             )}
 
             {/* Category filter chips */}
-            <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-0.5">
+            <div className="flex flex-wrap gap-1.5">
               <button
                 onClick={() => setCatFilter('')}
                 className={cn(
-                  "shrink-0 px-2.5 py-1 text-[11px] font-medium rounded-lg border transition-all",
+                  "px-3 py-1.5 text-[11px] font-medium rounded-lg border transition-all",
                   catFilter === ''
                     ? "bg-primary text-primary-foreground border-primary shadow-sm"
                     : "bg-background text-muted-foreground border-border"
@@ -559,7 +471,7 @@ const TasksPage = () => {
                   key={c}
                   onClick={() => setCatFilter((prev) => (prev === c ? '' : c))}
                   className={cn(
-                    "shrink-0 px-2.5 py-1 text-[11px] font-medium rounded-lg border transition-all",
+                    "px-3 py-1.5 text-[11px] font-medium rounded-lg border transition-all",
                     catFilter === c
                       ? "bg-primary text-primary-foreground border-primary shadow-sm"
                       : "bg-background text-muted-foreground border-border"
@@ -571,20 +483,20 @@ const TasksPage = () => {
             </div>
 
             {/* Priority filter */}
-            <div className="flex gap-1.5">
+            <div className="flex flex-wrap gap-1.5">
               {['', 'High', 'Medium', 'Low'].map((p) => (
                 <button
                   key={p || 'all'}
                   onClick={() => setPriFilter((prev) => (prev === p ? '' : p))}
                   className={cn(
-                    "flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-lg border transition-all",
+                    "flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold rounded-lg border transition-all",
                     priFilter === p
                       ? p === 'High'
                         ? "bg-destructive text-white border-destructive shadow-sm"
                         : p === 'Medium'
                         ? "bg-amber-500 text-white border-amber-500 shadow-sm"
                         : p === 'Low'
-                        ? "bg-muted-foreground text-white border-muted-foreground shadow-sm"
+                        ? "bg-slate-600 text-white border-slate-600 shadow-sm"
                         : "bg-primary text-primary-foreground border-primary shadow-sm"
                       : "bg-background text-muted-foreground border-border"
                   )}
@@ -596,7 +508,7 @@ const TasksPage = () => {
 
             {/* Add button */}
             <Button
-              className="w-full"
+              className="w-full h-11 md:h-10 md:max-w-xs"
               onClick={() =>
                 navigate(
                   '/tasks/add',
@@ -706,190 +618,154 @@ const TasksPage = () => {
             {/* Date navigation */}
             <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-card p-2">
               <button
-                onClick={() => {
-                  const prev = format(subDays(new Date(noteDate + "T00:00:00"), 1), 'yyyy-MM-dd');
-                  setNoteDate(prev);
-                }}
-                className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
+                onClick={() =>
+                  setNoteDate(format(subDays(parseISO(noteDate), 1), 'yyyy-MM-dd'))
+                }
+                className="h-10 w-10 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <div className="text-center">
                 <p className="text-sm font-semibold">
-                  {noteDate === today
+                  {isToday(parseISO(noteDate))
                     ? 'Today'
-                    : shortDate(noteDate, orgTimezone)}
+                    : format(parseISO(noteDate), 'd MMM, yyyy')}
                 </p>
                 <p className="text-[10px] text-muted-foreground">
-                  {format(new Date(noteDate + "T00:00:00"), 'EEEE')}
+                  {format(parseISO(noteDate), 'EEEE')}
                 </p>
               </div>
               <button
                 onClick={() => {
-                  const next = format(addDays(new Date(noteDate + "T00:00:00"), 1), 'yyyy-MM-dd');
+                  const next = format(addDays(parseISO(noteDate), 1), 'yyyy-MM-dd');
                   if (next <= today) setNoteDate(next);
                 }}
                 disabled={noteDate >= today}
-                className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors disabled:opacity-30"
+                className="h-10 w-10 flex items-center justify-center rounded-lg hover:bg-muted transition-colors disabled:opacity-30"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
 
-            {/* Add Note button */}
-            <Button
-              className="w-full"
-              onClick={() => {
-                setEditingNote(null);
-                setNoteTitle('');
-                setNoteContent('');
-                setNoteVisibility('Personal');
-                setShowNoteSheet(true);
-              }}
-            >
-              <Plus className="mr-2 h-4 w-4" /> Add Note
-            </Button>
-
-            {/* Personal Notes section */}
+            {/* Personal note */}
             <div>
-              <div className="flex items-center gap-1.5 mb-2">
+              <div className="flex items-center gap-1.5 mb-1.5">
                 <Lock className="h-3 w-3 text-muted-foreground" />
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   My Notes
                 </p>
-                {personalNotes.length > 0 && (
-                  <span className="text-[10px] text-muted-foreground">({personalNotes.length})</span>
-                )}
               </div>
-              {personalNotes.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-3 text-center">No personal notes for this day</p>
-              ) : (
-                <div className="space-y-2">
-                  {personalNotes.map((note) => (
-                    <NoteCard
-                      key={note.id}
-                      note={note}
-                      currentUserId={currentUserId}
-                      orgTimezone={orgTimezone}
-                      onEdit={handleEditNote}
-                      onDelete={(id) => setDeleteNoteId(id)}
-                    />
-                  ))}
-                </div>
-              )}
+              <Textarea
+                placeholder="Write your personal notes for today..."
+                value={personalContent}
+                onChange={(e) => setPersonalContent(e.target.value)}
+                onBlur={handleSavePersonalNote}
+                className="min-h-[120px] resize-none text-sm leading-relaxed"
+              />
+              <div className="flex items-center justify-between mt-1.5">
+                <p className="text-[10px] text-muted-foreground">
+                  {noteSaving
+                    ? 'Saving...'
+                    : notesQuery.data?.personal
+                    ? `Saved · ${format(parseISO(notesQuery.data.personal.updatedAt), 'h:mm a')}`
+                    : 'Auto-saves on blur'}
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs px-3"
+                  onClick={handleSavePersonalNote}
+                  disabled={!personalContent.trim() || noteSaving}
+                >
+                  Save
+                </Button>
+              </div>
             </div>
 
-            {/* Team Notes section — only if org module accessible */}
-            {hasModule('Tasks') && (
+            {/* Org / Team note */}
+            <div>
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Building2 className="h-3 w-3 text-blue-500" />
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Team Log
+                </p>
+              </div>
+
+              {/* Others' org notes */}
+              {(notesQuery.data?.orgNotes ?? [])
+                .filter((n) => n.createdByUserId !== currentUserId)
+                .map((note) => (
+                  <Card
+                    key={note.id}
+                    className="mb-2 border-blue-500/20 bg-blue-500/5"
+                  >
+                    <CardContent className="py-2.5 px-3">
+                      <p className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 mb-1">
+                        {note.createdByUsername} ·{' '}
+                        {format(parseISO(note.updatedAt), 'h:mm a')}
+                      </p>
+                      <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                        {note.content}
+                      </p>
+                    </CardContent>
+                  </Card>
+                ))}
+
+              <Textarea
+                placeholder="Add to today's team log (visible to all org members)..."
+                value={orgContent}
+                onChange={(e) => setOrgContent(e.target.value)}
+                onBlur={handleSaveOrgNote}
+                className="min-h-[100px] resize-none text-sm leading-relaxed border-blue-500/30 focus:border-blue-500"
+              />
+              <div className="flex justify-end mt-1.5">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs px-3 border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-500/5"
+                  onClick={handleSaveOrgNote}
+                  disabled={!orgContent.trim() || noteSaving}
+                >
+                  Post to Team
+                </Button>
+              </div>
+            </div>
+
+            {/* Recent personal notes */}
+            {(recentQuery.data ?? []).filter(
+              (n) => n.noteDate.slice(0, 10) !== noteDate
+            ).length > 0 && (
               <div>
-                <div className="flex items-center gap-1.5 mb-2">
-                  <Building2 className="h-3 w-3 text-blue-500" />
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Team Notes
-                  </p>
-                  {orgNotes.length > 0 && (
-                    <span className="text-[10px] text-muted-foreground">({orgNotes.length})</span>
-                  )}
-                </div>
-                {orgNotes.length === 0 ? (
-                  <p className="text-sm text-muted-foreground py-3 text-center">No team notes for this day</p>
-                ) : (
-                  <div className="space-y-2">
-                    {orgNotes.map((note) => (
-                      <NoteCard
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                  Recent Notes
+                </p>
+                <div className="space-y-2">
+                  {(recentQuery.data ?? [])
+                    .filter((n) => n.noteDate.slice(0, 10) !== noteDate)
+                    .map((note) => (
+                      <button
                         key={note.id}
-                        note={note}
-                        currentUserId={currentUserId}
-                        orgTimezone={orgTimezone}
-                        onEdit={handleEditNote}
-                        onDelete={(id) => setDeleteNoteId(id)}
-                      />
+                        className="w-full text-left"
+                        onClick={() => setNoteDate(note.noteDate.slice(0, 10))}
+                      >
+                        <Card className="hover:border-primary/40 transition-colors">
+                          <CardContent className="py-2.5 px-3">
+                            <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">
+                              {format(parseISO(note.noteDate), 'd MMM, EEE')}
+                            </p>
+                            <p className="text-xs text-foreground line-clamp-2">
+                              {note.content}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      </button>
                     ))}
-                  </div>
-                )}
+                </div>
               </div>
             )}
           </>
         )}
-      </div>
-
-      <BottomNav />
-
-      {/* ── Add / Edit Note Sheet ──────────────────────────────────────────── */}
-      <Sheet open={showNoteSheet} onOpenChange={(open) => { if (!open) resetNoteSheet(); }}>
-        <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-xl">
-          <SheetHeader className="pb-3">
-            <SheetTitle>{editingNote ? 'Edit Note' : 'Add Note'}</SheetTitle>
-          </SheetHeader>
-          <div className="space-y-3 pb-4">
-            {/* Visibility toggle — only when creating */}
-            {!editingNote && (
-              <div className="grid grid-cols-2 rounded-xl border border-border bg-muted/40 p-1 gap-1">
-                {(['Personal', 'Organisation'] as TaskVisibility[]).map((v) => (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => setNoteVisibility(v)}
-                    className={cn(
-                      "flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all",
-                      noteVisibility === v
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-muted-foreground"
-                    )}
-                  >
-                    {v === 'Personal' ? <Lock className="h-3 w-3" /> : <Building2 className="h-3 w-3" />}
-                    {v}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            <Input
-              placeholder="Title (optional)"
-              value={noteTitle}
-              onChange={(e) => setNoteTitle(e.target.value)}
-              maxLength={255}
-            />
-
-            <Textarea
-              placeholder="Write your note here..."
-              value={noteContent}
-              onChange={(e) => setNoteContent(e.target.value)}
-              className="min-h-[120px] resize-none text-sm leading-relaxed"
-              rows={5}
-              autoFocus
-            />
-
-            <Button
-              className="w-full"
-              onClick={handleSaveNote}
-              disabled={createNoteMutation.isPending || updateNoteMutation.isPending || !noteContent.trim()}
-            >
-              {(createNoteMutation.isPending || updateNoteMutation.isPending) ? 'Saving...' : 'Save'}
-            </Button>
-          </div>
-        </SheetContent>
-      </Sheet>
-
-      {/* ── Delete Note Confirm ────────────────────────────────────────────── */}
-      <AlertDialog open={!!deleteNoteId} onOpenChange={(open) => { if (!open) setDeleteNoteId(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Note?</AlertDialogTitle>
-            <AlertDialogDescription>This note will be permanently deleted.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteNoteMutation.isPending}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => deleteNoteMutation.mutate(deleteNoteId!)}
-              disabled={deleteNoteMutation.isPending}
-            >
-              {deleteNoteMutation.isPending ? 'Deleting...' : 'Delete'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+    </PageShell>
 
       {/* Complete confirm */}
       <AlertDialog
@@ -1016,7 +892,7 @@ const TasksPage = () => {
               allowFuture
             />
             <Button
-              className="w-full"
+              className="w-full h-11 md:h-10 md:max-w-xs"
               onClick={() =>
                 moveMutation.mutate({ id: pendingMove!.id, date: moveDateValue })
               }
@@ -1029,7 +905,7 @@ const TasksPage = () => {
           </div>
         </SheetContent>
       </Sheet>
-    </div>
+    </>
   );
 };
 

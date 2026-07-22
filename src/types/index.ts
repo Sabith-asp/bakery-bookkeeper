@@ -6,7 +6,6 @@ export interface User {
   organizationId: string | null;
   organizationName: string;
   enabledModules: string[];
-  organizationTimezone: string;
 }
 
 export interface AuthState {
@@ -34,7 +33,6 @@ export interface Organization {
   isActive: boolean;
   createdAt: string;
   enabledModules: string[];
-  timezone: string;
 }
 
 export interface OrgUser {
@@ -269,7 +267,8 @@ export type TaskStatus = 'Pending' | 'InProgress' | 'Completed';
 export type TaskVisibility = 'Personal' | 'Organisation';
 export type TaskActivityType =
   | 'Created' | 'StatusChanged' | 'Completed' | 'DateMoved'
-  | 'CarryForward' | 'CommentAdded' | 'Updated' | 'VisibilityChanged';
+  | 'CarryForward' | 'CommentAdded' | 'Updated' | 'VisibilityChanged'
+  | 'PriorityChanged';
 
 export interface Task {
   id: string;
@@ -311,22 +310,9 @@ export interface DailyNote {
   createdByUsername: string;
   noteDate: string;
   content: string;
-  title?: string;
   visibility: TaskVisibility;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface NoteFormData {
-  noteDate: string;
-  content: string;
-  title?: string;
-  visibility: TaskVisibility;
-}
-
-export interface UpdateNoteFormData {
-  content: string;
-  title?: string;
 }
 
 export interface TaskFormData {
@@ -343,4 +329,136 @@ export interface TaskFormData {
 export interface TaskSummary {
   todayCount: number;
   overdueCount: number;
+}
+
+// ── Prayer Module ────────────────────────────────────────────────────────────
+
+export type PrayerName = 'Fajr' | 'Dhuhr' | 'Asr' | 'Maghrib' | 'Isha';
+
+export type PrayerStatus =
+  | 'Upcoming'
+  | 'ReminderSent'
+  | 'Pending'
+  | 'CompletedOnTime'
+  | 'CompletedLate'
+  | 'Missed'
+  | 'Excused'
+  | 'QadaCompleted'
+  | 'Skipped';
+
+export interface PrayerRecord {
+  id: string;
+  organizationId: string;
+  userId: string;
+  username: string;
+  prayerName: PrayerName;
+  prayerDate: string;
+  prayerTime: string;    // "HH:MM:SS"
+  prayerEndTime: string;
+  actualCompletionTime?: string;
+  status: PrayerStatus;
+  congregationType?: string;
+  updatedByUsername?: string;
+  notes?: string;
+  lastUpdatedAt: string;
+  createdAt: string;
+}
+
+export interface PrayerStreak {
+  id: string;
+  organizationId: string;
+  userId: string;
+  currentStreak: number;
+  longestStreak: number;
+  lastStreakDate?: string;
+  totalPrayersCompleted: number;
+  totalPrayersOnTime: number;
+  lastUpdatedAt: string;
+}
+
+export interface PrayerOrgSettings {
+  id: string;
+  organizationId: string;
+  latitude: number;
+  longitude: number;
+  timezone: string;
+  calculationMethod: string;
+  asrMethod: string;
+  fajrAngle: number;
+  ishaAngle: number;
+}
+
+export interface PrayerUserSettings {
+  id: string;
+  organizationId: string;
+  userId: string;
+  latitude?: number;
+  longitude?: number;
+  timezone?: string;
+  cityName?: string;
+}
+
+export interface PrayerDashboardResponse {
+  todayDate: string;
+  todayDay: string;
+  completedCount: number;
+  pendingCount: number;
+  missedCount: number;
+  excusedCount: number;
+  totalPrayers: number;
+  completionPercentage: number;
+  currentPrayer?: PrayerName;
+  nextPrayer?: PrayerName;
+  nextPrayerTime?: string;
+  minutesToNextPrayer?: number;
+  streak?: PrayerStreak;
+  prayers: PrayerRecord[];
+  orgSettings?: PrayerOrgSettings;
+}
+
+export interface PrayerHistoryDay {
+  date: string;
+  completedCount: number;
+  totalCount: number;
+  prayers: PrayerRecord[];
+}
+
+export interface PrayerReminderConfig {
+  id: string;
+  organizationId: string;
+  userId: string;
+  prayerName: string;
+  reminderType: string;
+  minutesOffset: number;
+  isEnabled: boolean;
+}
+
+export interface PrayerAdminSummary {
+  date: string;
+  totalUsers: number;
+  totalPossiblePrayers: number;
+  totalCompleted: number;
+  totalMissed: number;
+  totalPending: number;
+  orgCompletionRate: number;
+  userStats: PrayerUserStat[];
+  prayerStats: PrayerNameStat[];
+}
+
+export interface PrayerUserStat {
+  userId: string;
+  username: string;
+  completedToday: number;
+  completionRate: number;
+  currentStreak: number;
+  longestStreak: number;
+  totalPrayersCompleted: number;
+}
+
+export interface PrayerNameStat {
+  prayerName: string;
+  completedCount: number;
+  missedCount: number;
+  pendingCount: number;
+  completionRate: number;
 }

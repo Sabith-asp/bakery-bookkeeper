@@ -1,5 +1,5 @@
 import apiClient from "./client";
-import type { Task, TaskActivity, DailyNote, TaskSummary, NoteFormData, UpdateNoteFormData } from "@/types";
+import type { Task, TaskActivity, DailyNote, TaskSummary } from "@/types";
 
 export const taskApi = {
   getMyTasks: async (params?: {
@@ -67,6 +67,10 @@ export const taskApi = {
     await apiClient.patch(`/tasks/${id}/target-date`, { newDate });
   },
 
+  changePriority: async (id: string, priority: string): Promise<void> => {
+    await apiClient.patch(`/tasks/${id}/priority`, { priority });
+  },
+
   changeVisibility: async (id: string, visibility: string): Promise<void> => {
     await apiClient.patch(`/tasks/${id}/visibility`, { visibility });
   },
@@ -79,22 +83,22 @@ export const taskApi = {
     await apiClient.delete(`/tasks/${id}`);
   },
 
-  getNotesByDate: async (date: string): Promise<{ personal: DailyNote[]; orgNotes: DailyNote[] }> => {
-    const { data } = await apiClient.get(`/tasks/notes/${date}`);
+  getNotesByDate: async (date: string, includeOrg = true): Promise<{ personal: DailyNote | null; orgNotes: DailyNote[] }> => {
+    const { data } = await apiClient.get(`/tasks/notes/${date}`, { params: { includeOrg } });
     return data;
   },
 
-  createNote: async (payload: NoteFormData): Promise<DailyNote> => {
-    const { data } = await apiClient.post("/tasks/notes", payload);
+  getRecentNotes: async (limit = 7): Promise<DailyNote[]> => {
+    const { data } = await apiClient.get("/tasks/notes/recent", { params: { limit } });
     return data;
   },
 
-  updateNote: async (id: string, payload: UpdateNoteFormData): Promise<DailyNote> => {
-    const { data } = await apiClient.put(`/tasks/notes/${id}`, payload);
+  upsertNote: async (date: string, content: string, visibility = "Personal"): Promise<DailyNote> => {
+    const { data } = await apiClient.put(`/tasks/notes/${date}`, { content, visibility });
     return data;
   },
 
-  deleteNote: async (id: string): Promise<void> => {
-    await apiClient.delete(`/tasks/notes/${id}`);
+  deleteNote: async (date: string): Promise<void> => {
+    await apiClient.delete(`/tasks/notes/${date}`);
   },
 };

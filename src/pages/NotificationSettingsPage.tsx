@@ -111,8 +111,8 @@ const NotificationSettingsPage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <div className="flex items-center gap-3 px-4 pt-5 pb-3 border-b border-border/60 bg-card/60 backdrop-blur-sm sticky top-0 z-40">
-        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full shrink-0" onClick={() => navigate(-1)}>
+      <div className="flex items-center gap-3 px-4 md:px-6 lg:px-8 pt-5 pb-3 border-b border-border/60 bg-card/60 backdrop-blur-sm sticky top-0 z-40">
+        <Button variant="ghost" size="icon" className="h-11 w-11 md:h-10 md:w-10 rounded-full shrink-0" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex items-center gap-2">
@@ -123,7 +123,7 @@ const NotificationSettingsPage = () => {
         </div>
       </div>
 
-      <div className="px-4 pt-5 space-y-5">
+      <div className="px-4 pt-5 space-y-5 md:px-6 lg:max-w-2xl lg:mx-auto">
 
         {/* Subscribe card */}
         <Card className={cn("shadow-sm border", isSubscribed ? "border-primary/30 bg-primary/5" : "border-border")}>

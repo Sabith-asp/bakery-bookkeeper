@@ -6,8 +6,7 @@ import { useOrgTimezone, formatInTz } from "@/lib/dateUtils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import PageHeader from "@/components/PageHeader";
-import BottomNav from "@/components/BottomNav";
+import PageShell from "@/components/PageShell";
 import EmptyState from "@/components/EmptyState";
 import { Plus, Banknote, ChevronRight, AlertCircle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -41,13 +40,10 @@ const DebtPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <PageHeader
-        title="Debts"
-        subtitle={tab === "Payable" ? "Money you owe" : "Money owed to you"}
-      />
-
-      <div className="space-y-4 px-4 pt-2">
+    <PageShell
+      title="Debts"
+      subtitle={tab === "Payable" ? "Money you owe" : "Money owed to you"}
+    >
         {/* Tab toggle */}
         <div className="grid grid-cols-2 rounded-xl border border-border bg-muted/40 p-1 gap-1">
           {(["Payable", "Receivable"] as Tab[]).map((t) => (
@@ -92,7 +88,7 @@ const DebtPage = () => {
           </CardContent>
         </Card>
 
-        <Button className="w-full" onClick={() => navigate("/debts/add", { state: { defaultType: tab } })}>
+        <Button className="w-full h-11 md:h-10 md:max-w-xs" onClick={() => navigate("/debts/add", { state: { defaultType: tab } })}>
           <Plus className="mr-2 h-4 w-4" /> Add Debt
         </Button>
 
@@ -206,10 +202,7 @@ const DebtPage = () => {
             )}
           </CardContent>
         </Card>
-      </div>
-
-      <BottomNav />
-    </div>
+    </PageShell>
   );
 };
 

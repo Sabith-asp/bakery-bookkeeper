@@ -19,8 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import PageHeader from "@/components/PageHeader";
-import BottomNav from "@/components/BottomNav";
+import PageShell from "@/components/PageShell";
 import DatePickerDrawer from "@/components/DatePickerDrawer";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
@@ -37,6 +36,7 @@ import {
   Eye,
   Building2,
   Lock,
+  Flag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -48,7 +48,7 @@ const PRIORITY_COLORS: Record<string, string> = {
 
 const STATUS_CONFIG = [
   { value: 'Pending',    label: 'Pending',     color: 'bg-muted text-muted-foreground border-border' },
-  { value: 'InProgress', label: 'In Progress', color: 'bg-blue-500/10 text-blue-600 border-blue-500/20' },
+  { value: 'InProgress', label: 'In Progress', color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20' },
   { value: 'Completed',  label: 'Completed',   color: 'bg-primary/10 text-primary border-primary/20' },
 ];
 
@@ -58,12 +58,13 @@ const ACTIVITY_CONFIG: Record<
 > = {
   Created:           { icon: <Plus className="h-3 w-3" />,            color: 'bg-muted text-muted-foreground',        label: () => 'Task created' },
   Updated:           { icon: <Pencil className="h-3 w-3" />,          color: 'bg-muted text-muted-foreground',        label: () => 'Task updated' },
-  StatusChanged:     { icon: <RefreshCw className="h-3 w-3" />,       color: 'bg-blue-500/10 text-blue-600',          label: (a) => `Status: ${a.oldValue} → ${a.newValue}` },
+  StatusChanged:     { icon: <RefreshCw className="h-3 w-3" />,       color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',       label: (a) => `Status: ${a.oldValue} → ${a.newValue}` },
   Completed:         { icon: <CheckCircle2 className="h-3 w-3" />,    color: 'bg-primary/10 text-primary',            label: () => 'Task completed' },
   DateMoved:         { icon: <Calendar className="h-3 w-3" />,        color: 'bg-amber-500/10 text-amber-600',        label: (a) => `Date moved: ${a.oldValue} → ${a.newValue}` },
-  CarryForward:      { icon: <CornerDownRight className="h-3 w-3" />, color: 'bg-orange-500/10 text-orange-600',      label: (a) => `Carried forward from ${a.oldValue}` },
-  CommentAdded:      { icon: <MessageSquare className="h-3 w-3" />,   color: 'bg-purple-500/10 text-purple-600',      label: () => 'Comment added' },
+  CarryForward:      { icon: <CornerDownRight className="h-3 w-3" />, color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',  label: (a) => `Carried forward from ${a.oldValue}` },
+  CommentAdded:      { icon: <MessageSquare className="h-3 w-3" />,   color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',  label: () => 'Comment added' },
   VisibilityChanged: { icon: <Eye className="h-3 w-3" />,             color: 'bg-muted text-muted-foreground',        label: (a) => `Visibility: ${a.oldValue} → ${a.newValue}` },
+  PriorityChanged:   { icon: <Flag className="h-3 w-3" />,            color: 'bg-amber-500/10 text-amber-600',        label: (a) => `Priority: ${a.oldValue} → ${a.newValue}` },
 };
 
 const TaskDetailPage = () => {
@@ -108,6 +109,13 @@ const TaskDetailPage = () => {
       toast({ title: 'Error', description: 'Failed to move date', variant: 'destructive' }),
   });
 
+  const priorityMutation = useMutation({
+    mutationFn: (priority: string) => taskApi.changePriority(id!, priority),
+    onSuccess: () => { invalidate(); toast({ title: 'Priority updated' }); },
+    onError: () =>
+      toast({ title: 'Error', description: 'Failed to update priority', variant: 'destructive' }),
+  });
+
   const commentMutation = useMutation({
     mutationFn: (text: string) => taskApi.addComment(id!, text),
     onSuccess: () => {
@@ -140,16 +148,12 @@ const TaskDetailPage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background pb-20">
-        <PageHeader title="Task" subtitle="" />
-        <div className="px-4 pt-2 space-y-4">
-          <Skeleton className="h-8 w-24 rounded-lg" />
-          <Skeleton className="h-24 w-full rounded-xl" />
-          <Skeleton className="h-12 w-full rounded-lg" />
-          <Skeleton className="h-40 w-full rounded-xl" />
-        </div>
-        <BottomNav />
-      </div>
+      <PageShell title="Task" subtitle="">
+        <Skeleton className="h-8 w-24 rounded-lg" />
+        <Skeleton className="h-24 w-full rounded-xl" />
+        <Skeleton className="h-12 w-full rounded-lg" />
+        <Skeleton className="h-40 w-full rounded-xl" />
+      </PageShell>
     );
   }
 
@@ -170,10 +174,8 @@ const TaskDetailPage = () => {
     task.originalTargetDate.slice(0, 10) !== task.currentTargetDate.slice(0, 10);
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <PageHeader title={task.title} subtitle={task.category} />
-
-      <div className="px-4 pt-2 space-y-4">
+    <>
+    <PageShell title={task.title} subtitle={task.category}>
         {/* Back */}
         <button
           className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -199,7 +201,7 @@ const TaskDetailPage = () => {
                   {task.category}
                 </span>
                 {isOrgTask ? (
-                  <span className="flex items-center gap-0.5 text-[11px] font-semibold px-2 py-1 rounded-lg border border-blue-500/20 bg-blue-500/10 text-blue-600">
+                  <span className="flex items-center gap-0.5 text-[11px] font-semibold px-2 py-1 rounded-lg border border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-400">
                     <Building2 className="h-3 w-3" /> Org
                   </span>
                 ) : (
@@ -213,7 +215,7 @@ const TaskDetailPage = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-10 w-10"
                     onClick={() => navigate('/tasks/edit', { state: { item: task } })}
                   >
                     <Pencil className="h-3.5 w-3.5" />
@@ -221,7 +223,7 @@ const TaskDetailPage = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                    className="h-10 w-10 text-muted-foreground hover:text-destructive"
                     onClick={() => setShowDeleteDialog(true)}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -283,6 +285,33 @@ const TaskDetailPage = () => {
             ))}
           </div>
         </div>
+
+        {/* Priority selector — only the creator can re-prioritise their own task */}
+        {isOwner && (
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              Priority
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {(['High', 'Medium', 'Low'] as const).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => priorityMutation.mutate(p)}
+                  disabled={priorityMutation.isPending}
+                  className={cn(
+                    "py-2.5 text-xs font-semibold rounded-lg border transition-all",
+                    task.priority === p
+                      ? PRIORITY_COLORS[p] + ' shadow-sm'
+                      : 'bg-background text-muted-foreground border-border hover:border-primary/40'
+                  )}
+                >
+                  {task.priority === p && <Flag className="inline h-3 w-3 mr-1" />}
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Action buttons */}
         <div className="grid grid-cols-3 gap-2">
@@ -380,9 +409,7 @@ const TaskDetailPage = () => {
             </div>
           )}
         </div>
-      </div>
-
-      <BottomNav />
+    </PageShell>
 
       {/* Add Comment sheet */}
       <Sheet open={showCommentSheet} onOpenChange={setShowCommentSheet}>
@@ -509,7 +536,7 @@ const TaskDetailPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 };
 

@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { wageApi } from "@/api/wage";
-import { useOrgTimezone, shortDate, todayInTz } from "@/lib/dateUtils";
 import EmptyState from "@/components/EmptyState";
 import { employeeApi } from "@/api/employee";
 import type { Wage } from "@/types";
@@ -27,10 +26,8 @@ const EmployeeWagePage = () => {
   const queryClient = useQueryClient();
   const isApiLoading = useApiLoading();
 
-  const orgTimezone = useOrgTimezone();
-  const todayLocal = new Date(todayInTz(orgTimezone) + "T00:00:00");
-  const [startDate, setStartDate] = useState(format(startOfMonth(todayLocal), "yyyy-MM-dd"));
-  const [endDate, setEndDate] = useState(format(endOfMonth(todayLocal), "yyyy-MM-dd"));
+  const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
+  const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
   const [pendingDelete, setPendingDelete] = useState<Wage | null>(null);
   const [page, setPage] = useState(1);
 
@@ -74,8 +71,8 @@ const EmployeeWagePage = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 pt-5 pb-3 border-b border-border/60 bg-card/60 backdrop-blur-sm sticky top-0 z-40">
-        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full shrink-0" onClick={() => navigate("/employees")}>
+      <div className="flex items-center gap-3 px-4 md:px-6 lg:px-8 pt-5 pb-3 border-b border-border/60 bg-card/60 backdrop-blur-sm sticky top-0 z-40">
+        <Button variant="ghost" size="icon" className="h-11 w-11 md:h-10 md:w-10 rounded-full shrink-0" onClick={() => navigate("/employees")}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex items-center gap-3 min-w-0">
@@ -93,8 +90,8 @@ const EmployeeWagePage = () => {
         </div>
       </div>
 
-      <div className="space-y-4 px-4 pt-4">
-        <DateRangeFilter startDate={startDate} endDate={endDate} onDateChange={handleDateChange} orgTimezone={orgTimezone} />
+      <div className="space-y-4 px-4 pt-4 md:px-6 lg:max-w-5xl lg:mx-auto">
+        <DateRangeFilter startDate={startDate} endDate={endDate} onDateChange={handleDateChange} />
 
         <Card className="border-wage/30 bg-wage/5 shadow-sm">
           <CardContent className="py-3">
@@ -136,7 +133,7 @@ const EmployeeWagePage = () => {
                         {item.description || "Wage payment"}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {shortDate(item.date, orgTimezone)}
+                        {new Date(item.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", year: "numeric" })}
                       </p>
                     </div>
                     <div className="flex items-center gap-1">
@@ -144,7 +141,7 @@ const EmployeeWagePage = () => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                        className="h-10 w-10 text-muted-foreground hover:text-foreground"
                         onClick={() => navigate("/wages/edit", { state: { item, returnTo } })}
                         disabled={isApiLoading}
                       >
@@ -153,7 +150,7 @@ const EmployeeWagePage = () => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        className="h-10 w-10 text-muted-foreground hover:text-destructive"
                         onClick={() => setPendingDelete(item)}
                         disabled={deleteMutation.isPending || isApiLoading}
                       >
@@ -166,10 +163,10 @@ const EmployeeWagePage = () => {
                   <div className="flex items-center justify-between pt-3 pb-2">
                     <span className="text-xs text-muted-foreground">Page {page} of {totalPages} · {totalCount} entries</span>
                     <div className="flex gap-1">
-                      <Button variant="outline" size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1 || isFetching}>
+                      <Button variant="outline" size="sm" className="h-8 px-2 text-xs gap-1" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1 || isFetching}>
                         <ChevronLeft className="h-3 w-3" /> Prev
                       </Button>
-                      <Button variant="outline" size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages || isFetching}>
+                      <Button variant="outline" size="sm" className="h-8 px-2 text-xs gap-1" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages || isFetching}>
                         Next <ChevronRight className="h-3 w-3" />
                       </Button>
                     </div>
@@ -191,7 +188,7 @@ const EmployeeWagePage = () => {
               <div className="space-y-1 text-sm">
                 {pendingDelete?.description && <p><span className="font-medium text-foreground">Description:</span> {pendingDelete.description}</p>}
                 <p><span className="font-medium text-foreground">Amount:</span> ₹{pendingDelete?.amount.toLocaleString("en-IN")}</p>
-                <p><span className="font-medium text-foreground">Date:</span> {pendingDelete && shortDate(pendingDelete.date, orgTimezone)}</p>
+                <p><span className="font-medium text-foreground">Date:</span> {pendingDelete && new Date(pendingDelete.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}</p>
                 <p className="pt-1 text-destructive">This action cannot be undone.</p>
               </div>
             </AlertDialogDescription>

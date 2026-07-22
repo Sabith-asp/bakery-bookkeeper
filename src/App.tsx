@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,31 +12,41 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import OrgRoute from "@/components/OrgRoute";
 import ModuleRoute from "@/components/ModuleRoute";
 import AdminRoute from "@/components/AdminRoute";
-import LoginPage from "@/pages/LoginPage";
-import DashboardPage from "@/pages/DashboardPage";
-import IncomePage from "@/pages/IncomePage";
-import AddIncomePage from "@/pages/AddIncomePage";
-import ExpensePage from "@/pages/ExpensePage";
-import AddExpensePage from "@/pages/AddExpensePage";
-import WagePage from "@/pages/WagePage";
-import AddWagePage from "@/pages/AddWagePage";
-import EmployeesPage from "@/pages/EmployeesPage";
-import EmployeeWagePage from "@/pages/EmployeeWagePage";
-import DivisionsPage from "@/pages/DivisionsPage";
-import NotificationSettingsPage from "@/pages/NotificationSettingsPage";
-import DebtPage from "@/pages/DebtPage";
-import AddDebtPage from "@/pages/AddDebtPage";
-import DebtDetailPage from "@/pages/DebtDetailPage";
-import AdminDashboardPage from "@/pages/admin/AdminDashboardPage";
-import CreateOrganizationPage from "@/pages/admin/CreateOrganizationPage";
-import OrganizationDetailPage from "@/pages/admin/OrganizationDetailPage";
-import InventoryPage from "@/pages/inventory/InventoryPage";
-import AddProductPage from "@/pages/inventory/AddProductPage";
-import AddTransactionPage from "@/pages/inventory/AddTransactionPage";
-import TasksPage from "@/pages/tasks/TasksPage";
-import AddTaskPage from "@/pages/tasks/AddTaskPage";
-import TaskDetailPage from "@/pages/tasks/TaskDetailPage";
-import NotFound from "./pages/NotFound";
+
+const LoginPage                = lazy(() => import("@/pages/LoginPage"));
+const DashboardPage            = lazy(() => import("@/pages/DashboardPage"));
+const IncomePage               = lazy(() => import("@/pages/IncomePage"));
+const AddIncomePage            = lazy(() => import("@/pages/AddIncomePage"));
+const ExpensePage              = lazy(() => import("@/pages/ExpensePage"));
+const AddExpensePage           = lazy(() => import("@/pages/AddExpensePage"));
+const WagePage                 = lazy(() => import("@/pages/WagePage"));
+const AddWagePage              = lazy(() => import("@/pages/AddWagePage"));
+const EmployeesPage            = lazy(() => import("@/pages/EmployeesPage"));
+const EmployeeWagePage         = lazy(() => import("@/pages/EmployeeWagePage"));
+const DivisionsPage            = lazy(() => import("@/pages/DivisionsPage"));
+const NotificationSettingsPage = lazy(() => import("@/pages/NotificationSettingsPage"));
+const DebtPage                 = lazy(() => import("@/pages/DebtPage"));
+const AddDebtPage              = lazy(() => import("@/pages/AddDebtPage"));
+const DebtDetailPage           = lazy(() => import("@/pages/DebtDetailPage"));
+const AdminDashboardPage       = lazy(() => import("@/pages/admin/AdminDashboardPage"));
+const CreateOrganizationPage   = lazy(() => import("@/pages/admin/CreateOrganizationPage"));
+const OrganizationDetailPage   = lazy(() => import("@/pages/admin/OrganizationDetailPage"));
+const InventoryPage            = lazy(() => import("@/pages/inventory/InventoryPage"));
+const AddProductPage           = lazy(() => import("@/pages/inventory/AddProductPage"));
+const AddTransactionPage       = lazy(() => import("@/pages/inventory/AddTransactionPage"));
+const TasksPage                = lazy(() => import("@/pages/tasks/TasksPage"));
+const AddTaskPage              = lazy(() => import("@/pages/tasks/AddTaskPage"));
+const TaskDetailPage           = lazy(() => import("@/pages/tasks/TaskDetailPage"));
+const PrayerDashboardPage      = lazy(() => import("@/pages/prayer/PrayerDashboardPage"));
+const PrayerHistoryPage        = lazy(() => import("@/pages/prayer/PrayerHistoryPage"));
+const PrayerSettingsPage       = lazy(() => import("@/pages/prayer/PrayerSettingsPage"));
+const NotFound                 = lazy(() => import("./pages/NotFound"));
+
+const PageLoader = () => (
+  <div className="flex h-screen items-center justify-center">
+    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+  </div>
+);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -74,6 +84,7 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* Public */}
             <Route path="/login" element={<LoginPage />} />
@@ -109,10 +120,14 @@ const App = () => {
             <Route path="/inventory/products/edit"      element={<Mod module="Inventory"><AddProductPage /></Mod>} />
             <Route path="/inventory/transactions/add"   element={<Mod module="Inventory"><AddTransactionPage /></Mod>} />
 
-            <Route path="/tasks"      element={<Mod module="Tasks"><TasksPage /></Mod>} />
-            <Route path="/tasks/add"  element={<Mod module="Tasks"><AddTaskPage /></Mod>} />
-            <Route path="/tasks/edit" element={<Mod module="Tasks"><AddTaskPage /></Mod>} />
-            <Route path="/tasks/:id"  element={<Mod module="Tasks"><TaskDetailPage /></Mod>} />
+            <Route path="/tasks"       element={<Mod module="Tasks"><TasksPage /></Mod>} />
+            <Route path="/tasks/add"   element={<Mod module="Tasks"><AddTaskPage /></Mod>} />
+            <Route path="/tasks/edit"  element={<Mod module="Tasks"><AddTaskPage /></Mod>} />
+            <Route path="/tasks/:id"   element={<Mod module="Tasks"><TaskDetailPage /></Mod>} />
+
+            <Route path="/prayer"          element={<Mod module="Prayer"><PrayerDashboardPage /></Mod>} />
+            <Route path="/prayer/history"  element={<Mod module="Prayer"><PrayerHistoryPage /></Mod>} />
+            <Route path="/prayer/settings" element={<Mod module="Prayer"><PrayerSettingsPage /></Mod>} />
 
             {/* SuperAdmin only routes */}
             <Route path="/admin"                      element={<Admin><AdminDashboardPage /></Admin>} />
@@ -121,6 +136,7 @@ const App = () => {
 
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </Suspense>
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>

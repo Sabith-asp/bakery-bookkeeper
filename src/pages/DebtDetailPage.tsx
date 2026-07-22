@@ -12,8 +12,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import PageHeader from "@/components/PageHeader";
-import BottomNav from "@/components/BottomNav";
+import PageShell from "@/components/PageShell";
 import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, Banknote, Pencil, Trash2, Plus, CheckCircle2, AlertCircle, X,
@@ -102,16 +101,12 @@ const DebtDetailPage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background pb-20">
-        <PageHeader title="Debt Details" subtitle="" />
-        <div className="space-y-4 px-4 pt-2">
-          <Skeleton className="h-9 w-32 rounded-lg" />
-          <Skeleton className="h-36 w-full rounded-2xl" />
-          <Skeleton className="h-10 w-full rounded-lg" />
-          <Skeleton className="h-48 w-full rounded-xl" />
-        </div>
-        <BottomNav />
-      </div>
+      <PageShell title="Debt Details" subtitle="">
+        <Skeleton className="h-9 w-32 rounded-lg" />
+        <Skeleton className="h-36 w-full rounded-2xl" />
+        <Skeleton className="h-10 w-full rounded-lg" />
+        <Skeleton className="h-48 w-full rounded-xl" />
+      </PageShell>
     );
   }
 
@@ -130,10 +125,8 @@ const DebtDetailPage = () => {
   const progressPct = debt.amount > 0 ? Math.min(100, (debt.paidAmount / debt.amount) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <PageHeader title={debt.personName} subtitle={isPayable ? "You owe" : "Owed to you"} />
-
-      <div className="space-y-4 px-4 pt-2">
+    <>
+    <PageShell title={debt.personName} subtitle={isPayable ? "You owe" : "Owed to you"}>
         {/* Back */}
         <button
           className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -210,7 +203,7 @@ const DebtDetailPage = () => {
         {!debt.isSettled && (
           <div className="flex gap-2">
             <Button
-              className="flex-1"
+              className="flex-1 h-11 md:h-10"
               onClick={() => setShowAddPayment((v) => !v)}
               disabled={addPaymentMutation.isPending}
             >
@@ -218,7 +211,7 @@ const DebtDetailPage = () => {
             </Button>
             <Button
               variant="outline"
-              className="flex-1"
+              className="flex-1 h-11 md:h-10"
               onClick={() => settleMutation.mutate()}
               disabled={settleMutation.isPending}
             >
@@ -305,7 +298,7 @@ const DebtDetailPage = () => {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      className="h-10 w-10 text-muted-foreground hover:text-destructive"
                       onClick={() => setDeletePaymentId(payment.id)}
                       disabled={deletePaymentMutation.isPending}
                     >
@@ -322,23 +315,21 @@ const DebtDetailPage = () => {
         <div className="flex gap-2 pb-2">
           <Button
             variant="outline"
-            className="flex-1"
+            className="flex-1 h-11 md:h-10"
             onClick={() => navigate("/debts/edit", { state: { item: debt } })}
           >
             <Pencil className="mr-1.5 h-4 w-4" /> Edit
           </Button>
           <Button
             variant="outline"
-            className="flex-1 text-destructive hover:text-destructive border-destructive/30 hover:border-destructive/60 hover:bg-destructive/5"
+            className="flex-1 h-11 md:h-10 text-destructive hover:text-destructive border-destructive/30 hover:border-destructive/60 hover:bg-destructive/5"
             onClick={() => setDeleteDialogOpen(true)}
             disabled={deleteMutation.isPending}
           >
             <Trash2 className="mr-1.5 h-4 w-4" /> Delete
           </Button>
         </div>
-      </div>
-
-      <BottomNav />
+    </PageShell>
 
       {/* Delete debt confirmation */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -385,7 +376,7 @@ const DebtDetailPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 };
 

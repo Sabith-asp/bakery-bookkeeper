@@ -82,11 +82,11 @@ const AddDebtPage = () => {
     <div className="min-h-screen bg-background pb-40">
       <SaveSuccessOverlay show={showSuccess} />
 
-      <div className="px-4 pt-safe-top">
+      <div className="px-4 pt-safe-top md:px-6 lg:max-w-2xl lg:mx-auto">
         <div className="flex items-center gap-3 pt-4 pb-5">
           <button
             onClick={() => navigate("/debts")}
-            className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted/60 hover:bg-muted transition-colors"
+            className="flex h-11 w-11 md:h-10 md:w-10 items-center justify-center rounded-xl bg-muted/60 hover:bg-muted transition-colors"
             disabled={isPending}
           >
             <ArrowLeft className="h-4 w-4" />
@@ -107,7 +107,7 @@ const AddDebtPage = () => {
               onClick={() => setType(t)}
               disabled={isPending}
               className={cn(
-                "rounded-lg py-2.5 text-xs font-semibold transition-all",
+                "rounded-lg py-2.5 md:py-3 text-xs font-semibold transition-all",
                 type === t
                   ? t === "Payable"
                     ? "bg-expense text-white shadow-sm"
@@ -214,15 +214,17 @@ const AddDebtPage = () => {
         </div>
       </div>
 
-      <div className="fixed bottom-16 left-0 right-0 px-4 pb-2">
-        <Button
-          className="w-full h-12 text-base font-semibold"
-          onClick={handleSubmit}
-          disabled={isPending}
-        >
-          <Check className="mr-2 h-4 w-4" />
-          {isPending ? "Saving..." : isEditMode ? "Update Debt" : "Save Debt"}
-        </Button>
+      <div className="fixed bottom-16 left-0 right-0 px-4 pb-2 md:px-6">
+        <div className="lg:max-w-2xl lg:mx-auto">
+          <Button
+            className="w-full h-12 text-base font-semibold"
+            onClick={handleSubmit}
+            disabled={isPending}
+          >
+            <Check className="mr-2 h-4 w-4" />
+            {isPending ? "Saving..." : isEditMode ? "Update Debt" : "Save Debt"}
+          </Button>
+        </div>
       </div>
 
       <BottomNav />

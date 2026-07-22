@@ -5,11 +5,8 @@ import { adminApi } from "@/api/admin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import PageHeader from "@/components/PageHeader";
-import BottomNav from "@/components/BottomNav";
+import PageShell from "@/components/PageShell";
 import { useToast } from "@/hooks/use-toast";
-import { TIMEZONES } from "@/config/timezones";
 
 const slugify = (value: string) =>
   value
@@ -26,7 +23,6 @@ const CreateOrganizationPage = () => {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
-  const [timezone, setTimezone] = useState("Asia/Kolkata");
 
   const handleNameChange = (value: string) => {
     setName(value);
@@ -41,7 +37,7 @@ const CreateOrganizationPage = () => {
   };
 
   const createMutation = useMutation({
-    mutationFn: () => adminApi.createOrganization({ name: name.trim(), slug: slug.trim(), timezone }),
+    mutationFn: () => adminApi.createOrganization({ name: name.trim(), slug: slug.trim() }),
     onSuccess: (org) => {
       queryClient.invalidateQueries({ queryKey: ["admin-organizations"] });
       toast({ title: "Created", description: `${org.name} has been created.` });
@@ -67,10 +63,7 @@ const CreateOrganizationPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <PageHeader title="New Organization" subtitle="Create a new tenant" />
-
-      <div className="space-y-4 px-4 pt-4">
+    <PageShell title="New Organization" subtitle="Create a new tenant">
         <Card className="shadow-sm">
           <CardContent className="pt-5 pb-5">
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -99,22 +92,6 @@ const CreateOrganizationPage = () => {
                 </p>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">Timezone</label>
-                <Select value={timezone} onValueChange={setTimezone} disabled={createMutation.isPending}>
-                  <SelectTrigger className="h-10">
-                    <SelectValue placeholder="Select timezone" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TIMEZONES.map((tz) => (
-                      <SelectItem key={tz.value} value={tz.value}>
-                        {tz.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
               <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-1">
                 <p className="text-xs font-medium text-foreground">Default module access</p>
                 <p className="text-xs text-muted-foreground">
@@ -126,23 +103,20 @@ const CreateOrganizationPage = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  className="flex-1"
+                  className="flex-1 h-11 md:h-10"
                   onClick={() => navigate("/admin")}
                   disabled={createMutation.isPending}
                 >
                   Cancel
                 </Button>
-                <Button type="submit" className="flex-1" disabled={createMutation.isPending}>
+                <Button type="submit" className="flex-1 h-11 md:h-10" disabled={createMutation.isPending}>
                   {createMutation.isPending ? "Creating..." : "Create"}
                 </Button>
               </div>
             </form>
           </CardContent>
         </Card>
-      </div>
-
-      <BottomNav />
-    </div>
+    </PageShell>
   );
 };
 

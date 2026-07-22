@@ -13,8 +13,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import DateRangeFilter from "@/components/DateRangeFilter";
-import PageHeader from "@/components/PageHeader";
-import BottomNav from "@/components/BottomNav";
+import PageShell from "@/components/PageShell";
 import EmptyState from "@/components/EmptyState";
 import { useToast } from "@/hooks/use-toast";
 import { useApiLoading } from "@/state/apiLoading";
@@ -116,10 +115,14 @@ const InventoryPage = () => {
     enabled: tab === "Summary",
   });
 
-  const invalidateAll = () => {
+  const invalidateProducts = () => {
     queryClient.invalidateQueries({ queryKey: ["inventory-products"] });
     queryClient.invalidateQueries({ queryKey: ["inventory-products-all"] });
     queryClient.invalidateQueries({ queryKey: ["inventory-summary"] });
+  };
+
+  const invalidateStock = () => {
+    invalidateProducts();
     queryClient.invalidateQueries({ queryKey: ["inventory-low-stock"] });
   };
 
@@ -127,7 +130,7 @@ const InventoryPage = () => {
   const statusMutation = useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) => inventoryApi.setProductStatus(id, isActive),
     onSuccess: (_, { isActive }) => {
-      invalidateAll();
+      invalidateProducts();
       toast({ title: isActive ? "Product activated" : "Product deactivated" });
     },
     onError: () => toast({ title: "Error", description: "Failed to update product status", variant: "destructive" }),
@@ -138,7 +141,7 @@ const InventoryPage = () => {
     mutationFn: inventoryApi.deleteTransaction,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory-transactions"] });
-      invalidateAll();
+      invalidateStock();
       toast({ title: "Deleted", description: "Transaction removed and stock reversed" });
     },
     onError: (error: any) => {
@@ -188,10 +191,8 @@ const InventoryPage = () => {
   const txTotalAmount = txData?.totalAmount ?? 0;
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <PageHeader title="Inventory" subtitle="Products & stock" />
-
-      <div className="space-y-4 px-4 pt-2">
+    <>
+    <PageShell title="Inventory" subtitle="Products & stock">
 
         {/* Tab selector */}
         <div className="grid grid-cols-3 rounded-xl border border-border bg-muted/40 p-1 gap-1">
@@ -233,7 +234,7 @@ const InventoryPage = () => {
               <div className="flex gap-1.5 flex-wrap items-center">
                 <button
                   onClick={() => { setCategoryId(""); setProductsPage(1); }}
-                  className={cn("px-2.5 py-1 text-[11px] font-medium rounded-lg border transition-all",
+                  className={cn("px-3 py-1.5 md:px-3.5 md:py-2 text-[11px] font-medium rounded-lg border transition-all",
                     categoryId === "" ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-background text-muted-foreground border-border hover:border-primary/40")}
                 >
                   All
@@ -242,7 +243,7 @@ const InventoryPage = () => {
                   <button
                     key={c.id}
                     onClick={() => { setCategoryId((prev) => prev === c.id ? "" : c.id); setProductsPage(1); }}
-                    className={cn("px-2.5 py-1 text-[11px] font-medium rounded-lg border transition-all",
+                    className={cn("px-3 py-1.5 md:px-3.5 md:py-2 text-[11px] font-medium rounded-lg border transition-all",
                       categoryId === c.id ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-background text-muted-foreground border-border hover:border-primary/40")}
                   >
                     {c.name}
@@ -250,7 +251,7 @@ const InventoryPage = () => {
                 ))}
                 <button
                   onClick={() => setShowCategorySheet(true)}
-                  className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium rounded-lg border border-dashed border-muted-foreground/40 text-muted-foreground hover:text-foreground transition-all"
+                  className="flex items-center gap-1 px-3 py-1.5 md:px-3.5 md:py-2 text-[11px] font-medium rounded-lg border border-dashed border-muted-foreground/40 text-muted-foreground hover:text-foreground transition-all"
                 >
                   <Tag className="h-3 w-3" /> Manage
                 </button>
@@ -260,13 +261,13 @@ const InventoryPage = () => {
             {categories.length === 0 && (
               <button
                 onClick={() => setShowCategorySheet(true)}
-                className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium rounded-lg border border-dashed border-muted-foreground/40 text-muted-foreground hover:text-foreground transition-all"
+                className="flex items-center gap-1 px-3 py-1.5 md:px-3.5 md:py-2 text-[11px] font-medium rounded-lg border border-dashed border-muted-foreground/40 text-muted-foreground hover:text-foreground transition-all"
               >
                 <Tag className="h-3 w-3" /> Add categories
               </button>
             )}
 
-            <Button className="w-full" onClick={() => navigate("/inventory/products/add")} disabled={isApiLoading}>
+            <Button className="w-full h-11 md:h-10 md:max-w-xs" onClick={() => navigate("/inventory/products/add")} disabled={isApiLoading}>
               <Plus className="mr-2 h-4 w-4" /> Add Product
             </Button>
 
@@ -311,11 +312,11 @@ const InventoryPage = () => {
                           </div>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                          <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground"
                             onClick={() => navigate("/inventory/products/edit", { state: { item: p } })} disabled={isApiLoading}>
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className={cn("h-8 w-8", p.isActive ? "text-muted-foreground hover:text-destructive" : "text-muted-foreground hover:text-income")}
+                          <Button variant="ghost" size="icon" className={cn("h-10 w-10", p.isActive ? "text-muted-foreground hover:text-destructive" : "text-muted-foreground hover:text-income")}
                             onClick={() => setPendingDeactivate(p)} disabled={statusMutation.isPending || isApiLoading}>
                             {p.isActive ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
                           </Button>
@@ -326,10 +327,10 @@ const InventoryPage = () => {
                       <div className="flex items-center justify-between pt-3 pb-2">
                         <span className="text-xs text-muted-foreground">Page {productsPage} of {productsTotalPages} · {productsTotalCount} products</span>
                         <div className="flex gap-1">
-                          <Button variant="outline" size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => setProductsPage((p) => Math.max(1, p - 1))} disabled={productsPage === 1 || productsFetching}>
+                          <Button variant="outline" size="sm" className="h-8 px-2 text-xs gap-1" onClick={() => setProductsPage((p) => Math.max(1, p - 1))} disabled={productsPage === 1 || productsFetching}>
                             <ChevronLeft className="h-3 w-3" /> Prev
                           </Button>
-                          <Button variant="outline" size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => setProductsPage((p) => Math.min(productsTotalPages, p + 1))} disabled={productsPage === productsTotalPages || productsFetching}>
+                          <Button variant="outline" size="sm" className="h-8 px-2 text-xs gap-1" onClick={() => setProductsPage((p) => Math.min(productsTotalPages, p + 1))} disabled={productsPage === productsTotalPages || productsFetching}>
                             Next <ChevronRight className="h-3 w-3" />
                           </Button>
                         </div>
@@ -394,7 +395,7 @@ const InventoryPage = () => {
               </Card>
             )}
 
-            <Button className="w-full" onClick={() => navigate("/inventory/transactions/add")} disabled={isApiLoading}>
+            <Button className="w-full h-11 md:h-10 md:max-w-xs" onClick={() => navigate("/inventory/transactions/add")} disabled={isApiLoading}>
               <Plus className="mr-2 h-4 w-4" /> Record Transaction
             </Button>
 
@@ -447,7 +448,7 @@ const InventoryPage = () => {
                           <span className={cn("text-sm font-semibold mr-1", tx.type === "Purchase" ? "text-income" : "text-primary")}>
                             ₹{tx.totalAmount.toLocaleString("en-IN")}
                           </span>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-destructive"
                             onClick={() => setPendingDeleteTx(tx)} disabled={deleteTxMutation.isPending || isApiLoading}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -458,10 +459,10 @@ const InventoryPage = () => {
                       <div className="flex items-center justify-between pt-3 pb-2">
                         <span className="text-xs text-muted-foreground">Page {txPage} of {txTotalPages} · {txTotalCount} entries</span>
                         <div className="flex gap-1">
-                          <Button variant="outline" size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => setTxPage((p) => Math.max(1, p - 1))} disabled={txPage === 1 || txFetching}>
+                          <Button variant="outline" size="sm" className="h-8 px-2 text-xs gap-1" onClick={() => setTxPage((p) => Math.max(1, p - 1))} disabled={txPage === 1 || txFetching}>
                             <ChevronLeft className="h-3 w-3" /> Prev
                           </Button>
-                          <Button variant="outline" size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => setTxPage((p) => Math.min(txTotalPages, p + 1))} disabled={txPage === txTotalPages || txFetching}>
+                          <Button variant="outline" size="sm" className="h-8 px-2 text-xs gap-1" onClick={() => setTxPage((p) => Math.min(txTotalPages, p + 1))} disabled={txPage === txTotalPages || txFetching}>
                             Next <ChevronRight className="h-3 w-3" />
                           </Button>
                         </div>
@@ -549,9 +550,7 @@ const InventoryPage = () => {
             )}
           </>
         )}
-      </div>
-
-      <BottomNav />
+    </PageShell>
 
       {/* ── Category management sheet ──────────────────────────────────── */}
       <Sheet open={showCategorySheet} onOpenChange={setShowCategorySheet}>
@@ -603,10 +602,10 @@ const InventoryPage = () => {
                           disabled={renameCatMutation.isPending}
                         />
                         <div className="flex gap-1 ml-2">
-                          <Button size="icon" variant="ghost" className="h-7 w-7 text-primary" onClick={() => renameCatMutation.mutate({ id: c.id, name: editCatName.trim() })} disabled={renameCatMutation.isPending || !editCatName.trim()}>
+                          <Button size="icon" variant="ghost" className="h-9 w-9 text-primary" onClick={() => renameCatMutation.mutate({ id: c.id, name: editCatName.trim() })} disabled={renameCatMutation.isPending || !editCatName.trim()}>
                             <Check className="h-3.5 w-3.5" />
                           </Button>
-                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditingCatId(null)}>
+                          <Button size="icon" variant="ghost" className="h-9 w-9" onClick={() => setEditingCatId(null)}>
                             <X className="h-3.5 w-3.5" />
                           </Button>
                         </div>
@@ -615,11 +614,11 @@ const InventoryPage = () => {
                       <>
                         <span className="text-sm font-medium">{c.name}</span>
                         <div className="flex gap-1">
-                          <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                          <Button size="icon" variant="ghost" className="h-9 w-9 text-muted-foreground hover:text-foreground"
                             onClick={() => { setEditingCatId(c.id); setEditCatName(c.name); }}>
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
-                          <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                          <Button size="icon" variant="ghost" className="h-9 w-9 text-muted-foreground hover:text-destructive"
                             onClick={() => setPendingDeleteCat(c)}>
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
@@ -710,7 +709,7 @@ const InventoryPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 };
 

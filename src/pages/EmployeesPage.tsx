@@ -8,8 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import PageHeader from "@/components/PageHeader";
-import BottomNav from "@/components/BottomNav";
+import PageShell from "@/components/PageShell";
 import { useToast } from "@/hooks/use-toast";
 import { useApiLoading } from "@/state/apiLoading";
 import { Plus, Pencil, Trash2, Check, X, ChevronRight } from "lucide-react";
@@ -106,10 +105,8 @@ const EmployeesPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <PageHeader title="Employees" subtitle="Manage your team" />
-
-      <div className="space-y-4 px-4 pt-2">
+    <>
+    <PageShell title="Employees" subtitle="Manage your team">
 
         {/* Add employee */}
         {showAdd ? (
@@ -135,7 +132,7 @@ const EmployeesPage = () => {
             </CardContent>
           </Card>
         ) : (
-          <Button className="w-full" onClick={() => setShowAdd(true)} disabled={isApiLoading}>
+          <Button className="w-full h-11 md:h-10 md:max-w-xs" onClick={() => setShowAdd(true)} disabled={isApiLoading}>
             <Plus className="mr-2 h-4 w-4" /> Add Employee
           </Button>
         )}
@@ -189,13 +186,13 @@ const EmployeesPage = () => {
                     )}
                   </div>
 
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-2">
                     {editingId === employee.id ? (
                       <>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-primary" onClick={saveEdit} disabled={renameMutation.isPending}>
+                        <Button size="icon" variant="ghost" className="h-10 w-10 text-primary" onClick={saveEdit} disabled={renameMutation.isPending}>
                           <Check className="h-4 w-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={cancelEdit} disabled={renameMutation.isPending}>
+                        <Button size="icon" variant="ghost" className="h-10 w-10" onClick={cancelEdit} disabled={renameMutation.isPending}>
                           <X className="h-4 w-4" />
                         </Button>
                       </>
@@ -204,7 +201,7 @@ const EmployeesPage = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-wage"
+                          className="h-10 w-10 text-muted-foreground hover:text-wage"
                           onClick={() => navigate(`/employees/${employee.id}/wages`)}
                           disabled={isApiLoading || deleteMutation.isPending}
                           title="View wages"
@@ -214,7 +211,7 @@ const EmployeesPage = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                          className="h-10 w-10 text-muted-foreground hover:text-foreground"
                           onClick={() => startEdit(employee)}
                           disabled={isApiLoading || deleteMutation.isPending}
                         >
@@ -223,7 +220,7 @@ const EmployeesPage = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          className="h-10 w-10 text-muted-foreground hover:text-destructive"
                           onClick={() => setPendingDelete(employee)}
                           disabled={isApiLoading || deleteMutation.isPending}
                         >
@@ -237,11 +234,9 @@ const EmployeesPage = () => {
             )}
           </CardContent>
         </Card>
-      </div>
+    </PageShell>
 
-      <BottomNav />
-
-      <AlertDialog open={!!pendingDelete} onOpenChange={(open) => { if (!open) setPendingDelete(null); }}>
+    <AlertDialog open={!!pendingDelete} onOpenChange={(open) => { if (!open) setPendingDelete(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Employee?</AlertDialogTitle>
@@ -265,7 +260,7 @@ const EmployeesPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 };
 

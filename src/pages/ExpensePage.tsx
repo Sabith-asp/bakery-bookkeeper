@@ -6,15 +6,13 @@ import { expenseApi } from "@/api/expense";
 import { divisionApi } from "@/api/division";
 import type { Expense } from "@/types";
 import { useAuth } from "@/context/AuthContext";
-import { useOrgTimezone, shortDate, numericDate, todayInTz } from "@/lib/dateUtils";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import DateRangeFilter from "@/components/DateRangeFilter";
-import PageHeader from "@/components/PageHeader";
-import BottomNav from "@/components/BottomNav";
+import PageShell from "@/components/PageShell";
 import { useToast } from "@/hooks/use-toast";
 import { useApiLoading } from "@/state/apiLoading";
 import { Plus, TrendingDown, Trash2, Pencil, ChevronLeft, ChevronRight, X } from "lucide-react";
@@ -30,10 +28,8 @@ const ExpensePage = () => {
   const isApiLoading = useApiLoading();
   const { hasModule } = useAuth();
 
-  const orgTimezone = useOrgTimezone();
-  const todayLocal = new Date(todayInTz(orgTimezone) + "T00:00:00");
-  const [startDate, setStartDate] = useState(format(startOfMonth(todayLocal), "yyyy-MM-dd"));
-  const [endDate, setEndDate] = useState(format(endOfMonth(todayLocal), "yyyy-MM-dd"));
+  const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
+  const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
   const [category, setCategory] = useState("");
   const [divisionId, setDivisionId] = useState("");
   const [showAllCategories, setShowAllCategories] = useState(false);
@@ -83,11 +79,9 @@ const ExpensePage = () => {
   });
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <PageHeader title="Expenses" subtitle="Track your spending" />
-
-      <div className="space-y-4 px-4 pt-2">
-        <DateRangeFilter startDate={startDate} endDate={endDate} onDateChange={handleDateChange} orgTimezone={orgTimezone} />
+    <>
+    <PageShell title="Expenses" subtitle="Track your spending">
+      <DateRangeFilter startDate={startDate} endDate={endDate} onDateChange={handleDateChange} />
 
         <Card className="border-expense/30 bg-expense/5 shadow-sm">
           <CardContent className="py-3">
@@ -102,7 +96,7 @@ const ExpensePage = () => {
             <button
               onClick={() => handleDivisionChange("")}
               className={cn(
-                "px-2.5 py-1 text-[11px] font-medium rounded-lg border transition-all",
+                "px-3 py-1.5 md:px-3.5 md:py-2 text-[11px] font-medium rounded-lg border transition-all",
                 divisionId === ""
                   ? "bg-primary text-primary-foreground border-primary shadow-sm"
                   : "bg-background text-muted-foreground border-border hover:border-primary/40"
@@ -115,7 +109,7 @@ const ExpensePage = () => {
                 key={d.id}
                 onClick={() => handleDivisionChange(d.id)}
                 className={cn(
-                  "px-2.5 py-1 text-[11px] font-medium rounded-lg border transition-all",
+                  "px-3 py-1.5 md:px-3.5 md:py-2 text-[11px] font-medium rounded-lg border transition-all",
                   divisionId === d.id
                     ? "bg-primary text-primary-foreground border-primary shadow-sm"
                     : "bg-background text-muted-foreground border-border hover:border-primary/40"
@@ -134,7 +128,7 @@ const ExpensePage = () => {
               key={c}
               onClick={() => handleCategoryChange(c)}
               className={cn(
-                "px-2.5 py-1 text-[11px] font-medium rounded-lg border transition-all",
+                "px-3 py-1.5 md:px-3.5 md:py-2 text-[11px] font-medium rounded-lg border transition-all",
                 category === c
                   ? "bg-expense text-expense-foreground border-expense shadow-sm"
                   : "bg-background text-muted-foreground border-border hover:border-expense/40"
@@ -145,21 +139,21 @@ const ExpensePage = () => {
           ))}
           <button
             onClick={() => setShowAllCategories((v) => !v)}
-            className="px-2.5 py-1 text-[11px] font-medium rounded-lg border border-dashed border-muted-foreground/40 text-muted-foreground hover:text-foreground transition-all"
+            className="px-3 py-1.5 md:px-3.5 md:py-2 text-[11px] font-medium rounded-lg border border-dashed border-muted-foreground/40 text-muted-foreground hover:text-foreground transition-all"
           >
             {showAllCategories ? "Less" : `+${EXPENSE_CATEGORIES.length - COMMON_EXPENSE_CATEGORIES.length} more`}
           </button>
           {category && (
             <button
               onClick={() => handleCategoryChange("")}
-              className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium rounded-lg border border-muted-foreground/30 text-muted-foreground hover:text-foreground transition-all"
+              className="flex items-center gap-1 px-3 py-1.5 md:px-3.5 md:py-2 text-[11px] font-medium rounded-lg border border-muted-foreground/30 text-muted-foreground hover:text-foreground transition-all"
             >
               <X className="h-2.5 w-2.5" /> Clear
             </button>
           )}
         </div>
 
-        <Button className="w-full" onClick={() => navigate("/expenses/add")} disabled={isApiLoading}>
+        <Button className="w-full h-11 md:h-10 md:max-w-xs" onClick={() => navigate("/expenses/add")} disabled={isApiLoading}>
           <Plus className="mr-2 h-4 w-4" /> {isApiLoading ? "Please wait..." : "Add Expense"}
         </Button>
 
@@ -193,16 +187,16 @@ const ExpensePage = () => {
                       <div>
                         <p className="text-sm font-medium text-foreground">{item.description}</p>
                         <p className="text-xs text-muted-foreground">
-                          {item.category}{item.paymentMethod ? ` · ${item.paymentMethod}` : ""} · {numericDate(item.date, orgTimezone)}
+                          {item.category}{item.paymentMethod ? ` · ${item.paymentMethod}` : ""} · {new Date(item.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "2-digit", year: "numeric" })}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold text-expense mr-1">₹{item.amount.toLocaleString("en-IN")}</span>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => navigate("/expenses/edit", { state: { item } })} disabled={isApiLoading}>
+                      <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground" onClick={() => navigate("/expenses/edit", { state: { item } })} disabled={isApiLoading}>
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => setPendingDelete(item)} disabled={deleteMutation.isPending || isApiLoading}>
+                      <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-destructive" onClick={() => setPendingDelete(item)} disabled={deleteMutation.isPending || isApiLoading}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -212,10 +206,10 @@ const ExpensePage = () => {
                   <div className="flex items-center justify-between pt-3 pb-2">
                     <span className="text-xs text-muted-foreground">Page {page} of {totalPages} · {totalCount} entries</span>
                     <div className="flex gap-1">
-                      <Button variant="outline" size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1 || isFetching}>
+                      <Button variant="outline" size="sm" className="h-8 px-2 text-xs gap-1" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1 || isFetching}>
                         <ChevronLeft className="h-3 w-3" /> Prev
                       </Button>
-                      <Button variant="outline" size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages || isFetching}>
+                      <Button variant="outline" size="sm" className="h-8 px-2 text-xs gap-1" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages || isFetching}>
                         Next <ChevronRight className="h-3 w-3" />
                       </Button>
                     </div>
@@ -225,11 +219,9 @@ const ExpensePage = () => {
             )}
           </CardContent>
         </Card>
-      </div>
+    </PageShell>
 
-      <BottomNav />
-
-      <AlertDialog open={!!pendingDelete} onOpenChange={(open) => { if (!open) setPendingDelete(null); }}>
+    <AlertDialog open={!!pendingDelete} onOpenChange={(open) => { if (!open) setPendingDelete(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Expense?</AlertDialogTitle>
@@ -238,7 +230,7 @@ const ExpensePage = () => {
                 <p><span className="font-medium text-foreground">Description:</span> {pendingDelete?.description}</p>
                 <p><span className="font-medium text-foreground">Category:</span> {pendingDelete?.category}</p>
                 <p><span className="font-medium text-foreground">Amount:</span> ₹{pendingDelete?.amount.toLocaleString("en-IN")}</p>
-                <p><span className="font-medium text-foreground">Date:</span> {pendingDelete && shortDate(pendingDelete.date, orgTimezone)}</p>
+                <p><span className="font-medium text-foreground">Date:</span> {pendingDelete && new Date(pendingDelete.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}</p>
                 <p className="pt-1 text-destructive">This action cannot be undone.</p>
               </div>
             </AlertDialogDescription>
@@ -254,7 +246,7 @@ const ExpensePage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 };
 

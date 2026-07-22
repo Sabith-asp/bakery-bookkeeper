@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useApiLoading } from "@/state/apiLoading";
-import { Wrench } from "lucide-react";
+import FynloIcon from "@/components/FynloIcon";
 
 const LoginPage = () => {
   const [username, setUsername] = useState("");
@@ -39,8 +39,8 @@ const LoginPage = () => {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <Card className="w-full max-w-sm shadow-lg">
         <CardHeader className="text-center space-y-2">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
-            <Wrench className="h-7 w-7 text-primary" />
+          <div className="mx-auto">
+            <FynloIcon size={64} />
           </div>
           <CardTitle className="font-display text-2xl">Fynlo</CardTitle>
           <CardDescription>Business Finance Manager</CardDescription>

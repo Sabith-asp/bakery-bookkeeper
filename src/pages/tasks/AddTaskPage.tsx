@@ -114,11 +114,11 @@ const AddTaskPage = () => {
       <SaveSuccessOverlay show={showSuccess} />
 
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 pt-5 pb-3 border-b border-border/60 bg-card/60 backdrop-blur-sm sticky top-0 z-40">
+      <div className="flex items-center gap-3 px-4 md:px-6 lg:px-8 pt-5 pb-3 border-b border-border/60 bg-card/60 backdrop-blur-sm sticky top-0 z-40">
         <Button
           variant="ghost"
           size="icon"
-          className="h-9 w-9 rounded-full shrink-0"
+          className="h-11 w-11 md:h-10 md:w-10 rounded-full shrink-0"
           onClick={() => navigate(-1)}
         >
           <ArrowLeft className="h-4 w-4" />
@@ -134,7 +134,7 @@ const AddTaskPage = () => {
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="px-4 pt-5 space-y-6">
+        <div className="px-4 pt-5 space-y-6 md:px-6 lg:max-w-2xl lg:mx-auto">
 
           {/* Visibility toggle */}
           <div className="grid grid-cols-2 rounded-xl border border-border bg-muted/40 p-1 gap-1">
@@ -214,7 +214,7 @@ const AddTaskPage = () => {
                   type="button"
                   onClick={() => setCategory(c)}
                   className={cn(
-                    "flex items-center gap-1 px-3 py-2 text-xs rounded-lg border font-medium transition-all",
+                    "flex items-center gap-1 px-3 py-2 md:px-3.5 md:py-2.5 text-xs rounded-lg border font-medium transition-all",
                     category === c
                       ? "bg-primary text-primary-foreground border-primary shadow-sm"
                       : "bg-background text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
@@ -264,19 +264,21 @@ const AddTaskPage = () => {
       </form>
 
       {/* Sticky submit */}
-      <div className="fixed bottom-16 left-0 right-0 px-4 pb-3 pt-2 bg-background/95 backdrop-blur-sm border-t border-border/60 z-30">
-        <Button
-          type="submit"
-          className="w-full h-12 text-base font-semibold"
-          disabled={mutation.isPending || isApiLoading}
-          onClick={handleSubmit}
-        >
-          {mutation.isPending
-            ? 'Saving...'
-            : isEditMode
-            ? 'Update Task'
-            : 'Save Task'}
-        </Button>
+      <div className="fixed bottom-16 left-0 right-0 px-4 pb-3 pt-2 md:px-6 bg-background/95 backdrop-blur-sm border-t border-border/60 z-30">
+        <div className="lg:max-w-2xl lg:mx-auto">
+          <Button
+            type="submit"
+            className="w-full h-12 text-base font-semibold"
+            disabled={mutation.isPending || isApiLoading}
+            onClick={handleSubmit}
+          >
+            {mutation.isPending
+              ? 'Saving...'
+              : isEditMode
+              ? 'Update Task'
+              : 'Save Task'}
+          </Button>
+        </div>
       </div>
 
       <BottomNav />

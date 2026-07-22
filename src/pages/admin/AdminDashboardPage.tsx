@@ -3,8 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { adminApi } from "@/api/admin";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import PageHeader from "@/components/PageHeader";
-import BottomNav from "@/components/BottomNav";
+import PageShell from "@/components/PageShell";
 import { Building2, Plus, CheckCircle2, XCircle, ChevronRight } from "lucide-react";
 
 const MODULE_LABELS: Record<string, string> = {
@@ -29,11 +28,7 @@ const AdminDashboardPage = () => {
   const suspended = organizations.length - active;
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <PageHeader title="Platform Admin" subtitle="Manage organizations" />
-
-      <div className="space-y-4 px-4 pt-2">
-
+    <PageShell title="Platform Admin" subtitle="Manage organizations">
         {/* Stats */}
         <div className="grid grid-cols-3 gap-2.5">
           <Card className="border-primary/20 bg-primary/5 shadow-sm">
@@ -56,7 +51,7 @@ const AdminDashboardPage = () => {
           </Card>
         </div>
 
-        <Button className="w-full" onClick={() => navigate("/admin/organizations/new")}>
+        <Button className="w-full h-11 md:h-10 md:max-w-xs" onClick={() => navigate("/admin/organizations/new")}>
           <Plus className="mr-2 h-4 w-4" /> New Organization
         </Button>
 
@@ -105,10 +100,7 @@ const AdminDashboardPage = () => {
             )}
           </CardContent>
         </Card>
-      </div>
-
-      <BottomNav />
-    </div>
+    </PageShell>
   );
 };
 

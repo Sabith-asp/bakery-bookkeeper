@@ -7,15 +7,13 @@ import { divisionApi } from "@/api/division";
 import type { Wage } from "@/types";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
-import { useOrgTimezone, shortDate, todayInTz } from "@/lib/dateUtils";
 import EmptyState from "@/components/EmptyState";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import DateRangeFilter from "@/components/DateRangeFilter";
-import PageHeader from "@/components/PageHeader";
-import BottomNav from "@/components/BottomNav";
+import PageShell from "@/components/PageShell";
 import { useToast } from "@/hooks/use-toast";
 import { useApiLoading } from "@/state/apiLoading";
 import { Plus, Users, Trash2, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
@@ -29,10 +27,8 @@ const WagePage = () => {
   const isApiLoading = useApiLoading();
   const { hasModule } = useAuth();
 
-  const orgTimezone = useOrgTimezone();
-  const todayLocal = new Date(todayInTz(orgTimezone) + "T00:00:00");
-  const [startDate, setStartDate] = useState(format(startOfMonth(todayLocal), "yyyy-MM-dd"));
-  const [endDate, setEndDate] = useState(format(endOfMonth(todayLocal), "yyyy-MM-dd"));
+  const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
+  const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
   const [divisionId, setDivisionId] = useState("");
   const [pendingDelete, setPendingDelete] = useState<Wage | null>(null);
   const [page, setPage] = useState(1);
@@ -75,11 +71,9 @@ const WagePage = () => {
   });
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <PageHeader title="Wages" subtitle="Track employee payments" />
-
-      <div className="space-y-4 px-4 pt-2">
-        <DateRangeFilter startDate={startDate} endDate={endDate} onDateChange={handleDateChange} orgTimezone={orgTimezone} />
+    <>
+    <PageShell title="Wages" subtitle="Track employee payments">
+        <DateRangeFilter startDate={startDate} endDate={endDate} onDateChange={handleDateChange} />
 
         {/* Division filter */}
         {divisions.length > 0 && (
@@ -87,7 +81,7 @@ const WagePage = () => {
             <button
               onClick={() => handleDivisionChange("")}
               className={cn(
-                "px-2.5 py-1 text-[11px] font-medium rounded-lg border transition-all",
+                "px-3 py-1.5 md:px-3.5 md:py-2 text-[11px] font-medium rounded-lg border transition-all",
                 divisionId === ""
                   ? "bg-primary text-primary-foreground border-primary shadow-sm"
                   : "bg-background text-muted-foreground border-border hover:border-primary/40"
@@ -100,7 +94,7 @@ const WagePage = () => {
                 key={d.id}
                 onClick={() => handleDivisionChange(d.id)}
                 className={cn(
-                  "px-2.5 py-1 text-[11px] font-medium rounded-lg border transition-all",
+                  "px-3 py-1.5 md:px-3.5 md:py-2 text-[11px] font-medium rounded-lg border transition-all",
                   divisionId === d.id
                     ? "bg-primary text-primary-foreground border-primary shadow-sm"
                     : "bg-background text-muted-foreground border-border hover:border-primary/40"
@@ -119,7 +113,7 @@ const WagePage = () => {
           </CardContent>
         </Card>
 
-        <Button className="w-full" onClick={() => navigate("/wages/add")} disabled={isApiLoading}>
+        <Button className="w-full h-11 md:h-10 md:max-w-xs" onClick={() => navigate("/wages/add")} disabled={isApiLoading}>
           <Plus className="mr-2 h-4 w-4" /> {isApiLoading ? "Please wait..." : "Add Wage"}
         </Button>
 
@@ -155,16 +149,16 @@ const WagePage = () => {
                         <p className="text-xs text-muted-foreground">
                           {item.description ? `${item.description} · ` : ""}
                           {item.paymentMethod ? `${item.paymentMethod} · ` : ""}
-                          {shortDate(item.date, orgTimezone)}
+                          {new Date(item.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold text-wage mr-1">₹{item.amount.toLocaleString("en-IN")}</span>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => navigate("/wages/edit", { state: { item } })} disabled={isApiLoading}>
+                      <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground" onClick={() => navigate("/wages/edit", { state: { item } })} disabled={isApiLoading}>
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => setPendingDelete(item)} disabled={deleteMutation.isPending || isApiLoading}>
+                      <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-destructive" onClick={() => setPendingDelete(item)} disabled={deleteMutation.isPending || isApiLoading}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -174,10 +168,10 @@ const WagePage = () => {
                   <div className="flex items-center justify-between pt-3 pb-2">
                     <span className="text-xs text-muted-foreground">Page {page} of {totalPages} · {totalCount} entries</span>
                     <div className="flex gap-1">
-                      <Button variant="outline" size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1 || isFetching}>
+                      <Button variant="outline" size="sm" className="h-8 px-2 text-xs gap-1" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1 || isFetching}>
                         <ChevronLeft className="h-3 w-3" /> Prev
                       </Button>
-                      <Button variant="outline" size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages || isFetching}>
+                      <Button variant="outline" size="sm" className="h-8 px-2 text-xs gap-1" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages || isFetching}>
                         Next <ChevronRight className="h-3 w-3" />
                       </Button>
                     </div>
@@ -187,11 +181,9 @@ const WagePage = () => {
             )}
           </CardContent>
         </Card>
-      </div>
+    </PageShell>
 
-      <BottomNav />
-
-      <AlertDialog open={!!pendingDelete} onOpenChange={(open) => { if (!open) setPendingDelete(null); }}>
+    <AlertDialog open={!!pendingDelete} onOpenChange={(open) => { if (!open) setPendingDelete(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Wage?</AlertDialogTitle>
@@ -200,7 +192,7 @@ const WagePage = () => {
                 <p><span className="font-medium text-foreground">Employee:</span> {pendingDelete?.employeeName || "Unknown Employee"}</p>
                 {pendingDelete?.description && <p><span className="font-medium text-foreground">Description:</span> {pendingDelete.description}</p>}
                 <p><span className="font-medium text-foreground">Amount:</span> ₹{pendingDelete?.amount.toLocaleString("en-IN")}</p>
-                <p><span className="font-medium text-foreground">Date:</span> {pendingDelete && shortDate(pendingDelete.date, orgTimezone)}</p>
+                <p><span className="font-medium text-foreground">Date:</span> {pendingDelete && new Date(pendingDelete.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}</p>
                 <p className="pt-1 text-destructive">This action cannot be undone.</p>
               </div>
             </AlertDialogDescription>
@@ -216,7 +208,7 @@ const WagePage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 };
 

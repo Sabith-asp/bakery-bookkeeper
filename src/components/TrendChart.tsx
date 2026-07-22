@@ -65,6 +65,7 @@ const TrendChart = () => {
   const { data = [], isLoading } = useQuery({
     queryKey: ["dashboard-trend", months],
     queryFn: () => dashboardApi.getTrend(months),
+    staleTime: 30 * 60 * 1000,
   });
 
   const chartData = data.map((d) => ({
