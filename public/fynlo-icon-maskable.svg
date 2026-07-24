@@ -1,0 +1,20 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Full blue background for maskable safe zone -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00AAFF"/>
+      <stop offset="100%" stop-color="#005DA8"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <!-- Logo centered in 80% safe zone (410x410, offset 51px each side) -->
+  <!-- Scaled from 100x100 viewBox to 300x300, centered at 256,256 → offset 106,106 -->
+  <g transform="translate(106, 106) scale(3)">
+    <rect x="20" y="18" width="13" height="64" rx="4" fill="white"/>
+    <rect x="20" y="18" width="44" height="13" rx="4" fill="white"/>
+    <rect x="20" y="46" width="32" height="13" rx="4" fill="white"/>
+    <rect x="56" y="73" width="8" height="9"  rx="2" fill="white" opacity="0.6"/>
+    <rect x="67" y="62" width="8" height="20" rx="2" fill="white" opacity="0.8"/>
+    <rect x="78" y="50" width="8" height="32" rx="2" fill="white"/>
+  </g>
+</svg>

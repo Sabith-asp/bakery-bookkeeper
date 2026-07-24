@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getTemplates } from "@/lib/expenseTemplates";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { expenseApi } from "@/api/expense";
@@ -15,7 +16,7 @@ import DateRangeFilter from "@/components/DateRangeFilter";
 import PageShell from "@/components/PageShell";
 import { useToast } from "@/hooks/use-toast";
 import { useApiLoading } from "@/state/apiLoading";
-import { Plus, TrendingDown, Trash2, Pencil, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Plus, TrendingDown, Trash2, Pencil, ChevronLeft, ChevronRight, X, Settings2, Zap } from "lucide-react";
 import { COMMON_EXPENSE_CATEGORIES, EXPENSE_CATEGORIES } from "@/config/expenseCategories";
 import EmptyState from "@/components/EmptyState";
 
@@ -27,6 +28,8 @@ const ExpensePage = () => {
   const queryClient = useQueryClient();
   const isApiLoading = useApiLoading();
   const { hasModule } = useAuth();
+
+  const templates = getTemplates();
 
   const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
   const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
@@ -151,6 +154,28 @@ const ExpensePage = () => {
               <X className="h-2.5 w-2.5" /> Clear
             </button>
           )}
+        </div>
+
+        {/* Template chips */}
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 md:-mx-6 md:px-6">
+          {templates.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => navigate("/expenses/add", { state: { template: t } })}
+              disabled={isApiLoading}
+              className="flex items-center gap-1.5 shrink-0 px-3 py-2 rounded-full border border-expense/40 bg-expense/5 text-xs font-medium text-expense hover:bg-expense/10 transition-colors"
+            >
+              <Zap className="h-3 w-3" />
+              {t.name}
+            </button>
+          ))}
+          <button
+            onClick={() => navigate("/expenses/templates")}
+            className="flex items-center gap-1.5 shrink-0 px-3 py-2 rounded-full border border-dashed border-muted-foreground/40 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-muted-foreground transition-colors"
+          >
+            <Settings2 className="h-3 w-3" />
+            {templates.length === 0 ? "Add Templates" : "Manage"}
+          </button>
         </div>
 
         <Button className="w-full h-11 md:h-10 md:max-w-xs" onClick={() => navigate("/expenses/add")} disabled={isApiLoading}>

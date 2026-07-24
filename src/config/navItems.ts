@@ -5,12 +5,12 @@ import {
   Wallet,
   UserCog,
   ShieldCheck,
-  Layers,
   Bell,
   Banknote,
   Package,
   ClipboardList,
   Moon,
+  MoreHorizontal,
   type LucideIcon,
 } from "lucide-react";
 
@@ -26,18 +26,23 @@ interface NavItemsInput {
 }
 
 export const getNavItems = ({ isSuperAdmin, hasModule }: NavItemsInput): NavItem[] => {
+  const orgUser = !isSuperAdmin;
   return [
-    { path: "/", label: "Dashboard", icon: LayoutDashboard, visible: !isSuperAdmin },
-    { path: "/income", label: "Income", icon: TrendingUp, visible: hasModule("Income") },
-    { path: "/expenses", label: "Expenses", icon: TrendingDown, visible: hasModule("Expenses") },
-    { path: "/wages", label: "Wages", icon: Wallet, visible: hasModule("Wages") },
-    { path: "/employees", label: "Employees", icon: UserCog, visible: hasModule("Employees") },
-    { path: "/divisions", label: "Divisions", icon: Layers, visible: hasModule("Divisions") },
-    { path: "/debts", label: "Debts", icon: Banknote, visible: hasModule("Debts") },
-    { path: "/inventory", label: "Inventory", icon: Package, visible: hasModule("Inventory") },
-    { path: "/tasks", label: "Tasks", icon: ClipboardList, visible: hasModule("Tasks") },
-    { path: "/prayer", label: "Prayer", icon: Moon, visible: hasModule("Prayer") },
-    { path: "/notifications", label: "Alerts", icon: Bell, visible: hasModule("Notifications") },
+    { path: "/", label: "Dashboard", icon: LayoutDashboard, visible: orgUser },
+    { path: "/income", label: "Income", icon: TrendingUp, visible: orgUser && hasModule("Income") },
+    { path: "/expenses", label: "Expenses", icon: TrendingDown, visible: orgUser && hasModule("Expenses") },
+    { path: "/wages", label: "Wages", icon: Wallet, visible: orgUser && hasModule("Wages") },
+    { path: "/employees", label: "Employees", icon: UserCog, visible: orgUser && hasModule("Employees") },
+    { path: "/debts", label: "Debts", icon: Banknote, visible: orgUser && hasModule("Debts") },
+    { path: "/inventory", label: "Inventory", icon: Package, visible: orgUser && hasModule("Inventory") },
+    { path: "/tasks", label: "Tasks", icon: ClipboardList, visible: orgUser && hasModule("Tasks") },
+    { path: "/prayer", label: "Prayer", icon: Moon, visible: orgUser && hasModule("Prayer") },
+    {
+      path: "/more",
+      label: "More",
+      icon: MoreHorizontal,
+      visible: orgUser && (hasModule("Divisions") || hasModule("Notifications")),
+    },
     { path: "/admin", label: "Admin", icon: ShieldCheck, visible: isSuperAdmin },
   ]
     .filter((item) => item.visible)

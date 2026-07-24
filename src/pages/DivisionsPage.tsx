@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { divisionApi } from "@/api/division";
 import type { Division } from "@/types";
@@ -13,6 +14,7 @@ import { Plus, Pencil, Trash2, Check, X, Layers } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
 
 const DivisionsPage = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isApiLoading = useApiLoading();
@@ -95,7 +97,7 @@ const DivisionsPage = () => {
 
   return (
     <>
-    <PageShell title="Divisions" subtitle="Manage your divisions">
+    <PageShell title="Divisions" subtitle="Manage your divisions" onBack={() => navigate(-1)}>
 
         {showAdd ? (
           <Card>

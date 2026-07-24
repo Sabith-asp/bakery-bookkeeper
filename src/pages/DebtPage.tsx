@@ -16,7 +16,7 @@ type Tab = "Payable" | "Receivable";
 
 const DebtPage = () => {
   const navigate = useNavigate();
-  const [tab, setTab] = useState<Tab>("Payable");
+  const [tab, setTab] = useState<Tab>("Receivable");
   const [showSettled, setShowSettled] = useState(false);
 
   const orgTimezone = useOrgTimezone();

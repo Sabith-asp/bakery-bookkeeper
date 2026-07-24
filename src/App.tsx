@@ -40,6 +40,8 @@ const TaskDetailPage           = lazy(() => import("@/pages/tasks/TaskDetailPage
 const PrayerDashboardPage      = lazy(() => import("@/pages/prayer/PrayerDashboardPage"));
 const PrayerHistoryPage        = lazy(() => import("@/pages/prayer/PrayerHistoryPage"));
 const PrayerSettingsPage       = lazy(() => import("@/pages/prayer/PrayerSettingsPage"));
+const MorePage                 = lazy(() => import("@/pages/MorePage"));
+const ExpenseTemplatesPage     = lazy(() => import("@/pages/ExpenseTemplatesPage"));
 const NotFound                 = lazy(() => import("./pages/NotFound"));
 
 const PageLoader = () => (
@@ -96,9 +98,10 @@ const App = () => {
             <Route path="/income/add"   element={<Mod module="Income"><AddIncomePage /></Mod>} />
             <Route path="/income/edit"  element={<Mod module="Income"><AddIncomePage /></Mod>} />
 
-            <Route path="/expenses"     element={<Mod module="Expenses"><ExpensePage /></Mod>} />
-            <Route path="/expenses/add" element={<Mod module="Expenses"><AddExpensePage /></Mod>} />
-            <Route path="/expenses/edit"element={<Mod module="Expenses"><AddExpensePage /></Mod>} />
+            <Route path="/expenses"           element={<Mod module="Expenses"><ExpensePage /></Mod>} />
+            <Route path="/expenses/add"       element={<Mod module="Expenses"><AddExpensePage /></Mod>} />
+            <Route path="/expenses/edit"      element={<Mod module="Expenses"><AddExpensePage /></Mod>} />
+            <Route path="/expenses/templates" element={<Mod module="Expenses"><ExpenseTemplatesPage /></Mod>} />
 
             <Route path="/wages"        element={<Mod module="Wages"><WagePage /></Mod>} />
             <Route path="/wages/add"    element={<Mod module="Wages"><AddWagePage /></Mod>} />
@@ -128,6 +131,8 @@ const App = () => {
             <Route path="/prayer"          element={<Mod module="Prayer"><PrayerDashboardPage /></Mod>} />
             <Route path="/prayer/history"  element={<Mod module="Prayer"><PrayerHistoryPage /></Mod>} />
             <Route path="/prayer/settings" element={<Mod module="Prayer"><PrayerSettingsPage /></Mod>} />
+
+            <Route path="/more"            element={<Org><MorePage /></Org>} />
 
             {/* SuperAdmin only routes */}
             <Route path="/admin"                      element={<Admin><AdminDashboardPage /></Admin>} />

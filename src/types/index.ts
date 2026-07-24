@@ -177,6 +177,15 @@ export interface ExpenseFormData {
   divisionId?: string;
 }
 
+export interface ExpenseTemplate {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  amount?: number;
+  paymentMethod?: string;
+}
+
 export interface WageFormData {
   employeeId: string;
   description?: string;

@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { expenseApi } from "@/api/expense";
 import { divisionApi } from "@/api/division";
-import type { Expense } from "@/types";
+import type { Expense, ExpenseTemplate } from "@/types";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,15 +30,19 @@ const AddExpensePage = () => {
   const { hasModule } = useAuth();
 
   const editItem = location.state?.item as Expense | undefined;
+  const template = location.state?.template as ExpenseTemplate | undefined;
   const isEditMode = !!editItem;
 
-  const [amount, setAmount] = useState(editItem ? String(editItem.amount) : "");
-  const [description, setDescription] = useState(editItem?.description ?? "");
-  const [category, setCategory] = useState(editItem?.category ?? "");
-  const [showAllCategories, setShowAllCategories] = useState(
-    !!editItem?.category && !COMMON_EXPENSE_CATEGORIES.includes(editItem.category as any)
+  const [amount, setAmount] = useState(
+    editItem ? String(editItem.amount) : template?.amount ? String(template.amount) : ""
   );
-  const [paymentMethod, setPaymentMethod] = useState(editItem?.paymentMethod ?? "");
+  const [description, setDescription] = useState(editItem?.description ?? template?.description ?? "");
+  const [category, setCategory] = useState(editItem?.category ?? template?.category ?? "");
+  const [showAllCategories, setShowAllCategories] = useState(
+    !!(editItem?.category ?? template?.category) &&
+    !COMMON_EXPENSE_CATEGORIES.includes((editItem?.category ?? template?.category ?? "") as any)
+  );
+  const [paymentMethod, setPaymentMethod] = useState(editItem?.paymentMethod ?? template?.paymentMethod ?? "");
   const [divisionId, setDivisionId] = useState(editItem?.divisionId ?? "");
   const [date, setDate] = useState(editItem ? editItem.date.substring(0, 10) : format(new Date(), "yyyy-MM-dd"));
   const [showSuccess, setShowSuccess] = useState(false);
