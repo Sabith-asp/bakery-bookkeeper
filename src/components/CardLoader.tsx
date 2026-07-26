@@ -7,7 +7,7 @@ const CardLoader = () => {
   return (
     <div className="flex items-center justify-center py-10">
       {animData ? (
-        <Lottie animationData={animData} loop style={{ width: 90, height: 90 }} />
+        <Lottie animationData={animData} loop style={{ width: 140, height: 140 }} />
       ) : (
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent my-4" />
       )}
