@@ -109,7 +109,7 @@ const DashboardPage = () => {
         )}
 
         {summaryLoading ? (
-          <div className="rounded-2xl bg-muted/60 p-5 space-y-3">
+          <div className="min-h-[160px] rounded-2xl bg-muted/60 p-5 space-y-3">
             <Skeleton className="h-4 w-28 rounded-md" />
             <Skeleton className="h-10 w-40 rounded-md" />
             <div className="flex gap-4 pt-3 border-t border-border">
@@ -124,7 +124,7 @@ const DashboardPage = () => {
             </div>
           </div>
         ) : (
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-[hsl(215_90%_48%)] text-primary-foreground shadow-lg shadow-primary/20 p-5">
+          <div className="min-h-[160px] relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-[hsl(215_90%_48%)] text-primary-foreground shadow-lg shadow-primary/20 p-5">
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_hsl(0_0%_100%/0.12)_0%,_transparent_60%)]" />
             <p className="text-sm font-medium opacity-80">{isToday ? "Today's" : "Filtered"} Balance</p>
             <p className="mt-1 text-4xl font-bold font-display tracking-tight">₹{(summary?.balance ?? 0).toLocaleString("en-IN")}</p>

@@ -17,7 +17,7 @@ const PageShell = ({ title, subtitle, onBack, children }: PageShellProps) => {
       <AppSidebar />
       <SidebarInset className="pb-20 md:pb-6">
         <PageHeader title={title} subtitle={subtitle} onBack={onBack} />
-        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-4 px-4 pt-2 md:px-6 md:pt-4 lg:max-w-5xl lg:mx-auto lg:space-y-6 w-full overflow-x-hidden">
+        <div className="animate-in fade-in duration-300 space-y-4 px-4 pt-2 md:px-6 md:pt-4 lg:max-w-5xl lg:mx-auto lg:space-y-6 w-full overflow-x-hidden">
           {children}
         </div>
         <BottomNav />
