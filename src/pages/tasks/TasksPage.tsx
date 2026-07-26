@@ -23,6 +23,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import PageShell from "@/components/PageShell";
 import EmptyState from "@/components/EmptyState";
 import ErrorState from "@/components/ErrorState";
+import CardLoader from "@/components/CardLoader";
 import DatePickerDrawer from "@/components/DatePickerDrawer";
 import { useToast } from "@/hooks/use-toast";
 import { useApiLoading } from "@/state/apiLoading";
@@ -532,23 +533,10 @@ const TasksPage = () => {
             {tasksError && <ErrorState message="Failed to load tasks" onRetry={tasksRefetch} />}
 
             {/* Task list */}
-            <Card
-              className={cn(
-                "transition-opacity",
-                (myQuery.isFetching || teamQuery.isFetching) && !loading && "opacity-60"
-              )}
-            >
+            <Card>
               <CardContent className="divide-y divide-border py-0">
-                {loading ? (
-                  [...Array(4)].map((_, i) => (
-                    <div key={i} className="flex items-center gap-3 py-3">
-                      <Skeleton className="h-5 w-5 rounded-full" />
-                      <div className="space-y-1.5 flex-1">
-                        <Skeleton className="h-3.5 w-3/4" />
-                        <Skeleton className="h-3 w-1/2" />
-                      </div>
-                    </div>
-                  ))
+                {loading || myQuery.isFetching || teamQuery.isFetching ? (
+                  <CardLoader />
                 ) : tasks.length === 0 ? (
                   <EmptyState
                     message={

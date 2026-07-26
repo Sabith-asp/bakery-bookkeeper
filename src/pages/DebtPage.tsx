@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import PageShell from "@/components/PageShell";
 import EmptyState from "@/components/EmptyState";
 import ErrorState from "@/components/ErrorState";
+import CardLoader from "@/components/CardLoader";
 import { Plus, Banknote, ChevronRight, AlertCircle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Debt } from "@/types";
@@ -22,7 +23,7 @@ const DebtPage = () => {
 
   const orgTimezone = useOrgTimezone();
 
-  const { data: debts = [], isLoading, isError, refetch } = useQuery({
+  const { data: debts = [], isLoading, isFetching, isError, refetch } = useQuery({
     queryKey: ["debts"],
     queryFn: () => debtApi.getAll(),
   });
@@ -107,21 +108,8 @@ const DebtPage = () => {
         {isError && <ErrorState message="Failed to load debts" onRetry={refetch} />}
         <Card className="shadow-sm">
           <CardContent className="divide-y divide-border py-0">
-            {isLoading ? (
-              <>
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="flex items-center justify-between py-3 px-1">
-                    <div className="flex items-center gap-3">
-                      <Skeleton className="h-9 w-9 rounded-xl shrink-0" />
-                      <div className="space-y-1.5">
-                        <Skeleton className="h-3.5 w-28 rounded-md" />
-                        <Skeleton className="h-3 w-20 rounded-md" />
-                      </div>
-                    </div>
-                    <Skeleton className="h-4 w-16 rounded-md" />
-                  </div>
-                ))}
-              </>
+            {isLoading || isFetching ? (
+              <CardLoader />
             ) : filtered.length === 0 ? (
               <EmptyState message={showSettled ? "No debts found" : `No active ${tab === "Payable" ? "payable" : "receivable"} debts`} />
             ) : (

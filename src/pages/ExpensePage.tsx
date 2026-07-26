@@ -20,6 +20,7 @@ import { Plus, TrendingDown, Trash2, Pencil, ChevronLeft, ChevronRight, X, Setti
 import { COMMON_EXPENSE_CATEGORIES, EXPENSE_CATEGORIES } from "@/config/expenseCategories";
 import EmptyState from "@/components/EmptyState";
 import ErrorState from "@/components/ErrorState";
+import CardLoader from "@/components/CardLoader";
 
 const PAGE_SIZE = 20;
 
@@ -184,23 +185,10 @@ const ExpensePage = () => {
         </Button>
 
         {isError && <ErrorState message="Failed to load expenses" onRetry={refetch} />}
-        <Card className={cn("transition-opacity duration-200", isFetching && !isLoading && "opacity-60")}>
+        <Card>
           <CardContent className="divide-y divide-border py-0">
-            {isLoading ? (
-              <>
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="flex items-center justify-between py-3">
-                    <div className="flex items-center gap-3">
-                      <Skeleton className="h-9 w-9 rounded-xl" />
-                      <div className="space-y-1.5">
-                        <Skeleton className="h-3.5 w-36" />
-                        <Skeleton className="h-3 w-24" />
-                      </div>
-                    </div>
-                    <Skeleton className="h-4 w-16" />
-                  </div>
-                ))}
-              </>
+            {isLoading || isFetching ? (
+              <CardLoader />
             ) : items.length === 0 ? (
               <EmptyState message="No expense entries found" />
             ) : (
