@@ -14,6 +14,7 @@ import { dashboardApi } from "@/api/dashboard";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 // Resolved from CSS vars in index.css
 const INCOME_COLOR  = "hsl(158, 64%, 38%)";
@@ -58,6 +59,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 const TrendChart = () => {
+  const { hasModule } = useAuth();
+  const hasWages = hasModule("Wages");
   const [months, setMonths] = useState<3 | 6 | 12>(6);
   const [view, setView] = useState<"overview" | "breakdown">("overview");
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
@@ -70,7 +73,7 @@ const TrendChart = () => {
 
   const chartData = data.map((d) => ({
     ...d,
-    outflow: d.expense + d.wage,
+    outflow: d.expense + (hasWages ? d.wage : 0),
   }));
 
   const cur  = chartData[chartData.length - 1];
@@ -206,11 +209,13 @@ const TrendChart = () => {
                       <Cell key={i} fill={EXPENSE_COLOR} opacity={cellOpacity(i)} />
                     ))}
                   </Bar>
-                  <Bar dataKey="wage" name="Wages" radius={[4, 4, 0, 0]}>
-                    {chartData.map((_, i) => (
-                      <Cell key={i} fill={WAGE_COLOR} opacity={cellOpacity(i)} />
-                    ))}
-                  </Bar>
+                  {hasWages && (
+                    <Bar dataKey="wage" name="Wages" radius={[4, 4, 0, 0]}>
+                      {chartData.map((_, i) => (
+                        <Cell key={i} fill={WAGE_COLOR} opacity={cellOpacity(i)} />
+                      ))}
+                    </Bar>
+                  )}
                 </>
               )}
             </BarChart>
@@ -235,10 +240,12 @@ const TrendChart = () => {
                 <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: EXPENSE_COLOR }} />
                 <span className="text-[11px] text-muted-foreground">Expense</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: WAGE_COLOR }} />
-                <span className="text-[11px] text-muted-foreground">Wages</span>
-              </div>
+              {hasWages && (
+                <div className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: WAGE_COLOR }} />
+                  <span className="text-[11px] text-muted-foreground">Wages</span>
+                </div>
+              )}
             </>
           )}
 
@@ -277,7 +284,7 @@ const TrendChart = () => {
                 ✕
               </button>
             </div>
-            <div className="grid grid-cols-3 gap-x-2 gap-y-1">
+            <div className={`grid gap-x-2 gap-y-1 ${hasWages ? "grid-cols-3" : "grid-cols-2"}`}>
               <div>
                 <p className="text-[10px] text-muted-foreground">Income</p>
                 <p className="text-xs font-bold" style={{ color: INCOME_COLOR }}>
@@ -290,25 +297,27 @@ const TrendChart = () => {
                   {formatFull(active.expense)}
                 </p>
               </div>
-              <div>
-                <p className="text-[10px] text-muted-foreground">Wages</p>
-                <p className="text-xs font-bold" style={{ color: WAGE_COLOR }}>
-                  {formatFull(active.wage)}
-                </p>
-              </div>
+              {hasWages && (
+                <div>
+                  <p className="text-[10px] text-muted-foreground">Wages</p>
+                  <p className="text-xs font-bold" style={{ color: WAGE_COLOR }}>
+                    {formatFull(active.wage)}
+                  </p>
+                </div>
+              )}
             </div>
             <div className="mt-2 pt-2 border-t border-border flex items-center justify-between">
               <span className="text-[10px] text-muted-foreground font-medium">Net balance</span>
               <span
                 className={cn(
                   "text-xs font-bold",
-                  active.income - active.expense - active.wage >= 0
+                  active.income - active.expense - (hasWages ? active.wage : 0) >= 0
                     ? "text-income"
                     : "text-expense"
                 )}
               >
-                {active.income - active.expense - active.wage >= 0 ? "+" : ""}
-                {formatFull(active.income - active.expense - active.wage)}
+                {active.income - active.expense - (hasWages ? active.wage : 0) >= 0 ? "+" : ""}
+                {formatFull(active.income - active.expense - (hasWages ? active.wage : 0))}
               </span>
             </div>
           </div>
