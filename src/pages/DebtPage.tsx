@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import PageShell from "@/components/PageShell";
 import EmptyState from "@/components/EmptyState";
+import ErrorState from "@/components/ErrorState";
 import { Plus, Banknote, ChevronRight, AlertCircle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Debt } from "@/types";
@@ -21,7 +22,7 @@ const DebtPage = () => {
 
   const orgTimezone = useOrgTimezone();
 
-  const { data: debts = [], isLoading } = useQuery({
+  const { data: debts = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["debts"],
     queryFn: () => debtApi.getAll(),
   });
@@ -103,6 +104,7 @@ const DebtPage = () => {
           </button>
         )}
 
+        {isError && <ErrorState message="Failed to load debts" onRetry={refetch} />}
         <Card className="shadow-sm">
           <CardContent className="divide-y divide-border py-0">
             {isLoading ? (
@@ -123,12 +125,13 @@ const DebtPage = () => {
             ) : filtered.length === 0 ? (
               <EmptyState message={showSettled ? "No debts found" : `No active ${tab === "Payable" ? "payable" : "receivable"} debts`} />
             ) : (
-              filtered.map((debt) => {
+              filtered.map((debt, index) => {
                 const overdue = isOverdue(debt);
                 return (
                   <button
                     key={debt.id}
-                    className="flex w-full items-center justify-between py-3 px-1 -mx-1 rounded-lg hover:bg-muted/40 transition-colors text-left"
+                    className="animate-in fade-in slide-in-from-bottom-1 duration-200 fill-mode-both flex w-full items-center justify-between py-3 px-1 -mx-1 rounded-lg hover:bg-muted/40 transition-colors text-left"
+                    style={{ animationDelay: `${index * 40}ms` }}
                     onClick={() => navigate(`/debts/${debt.id}`)}
                   >
                     <div className="flex items-center gap-3">

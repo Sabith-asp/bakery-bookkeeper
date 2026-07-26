@@ -19,6 +19,7 @@ import { useApiLoading } from "@/state/apiLoading";
 import { Plus, TrendingDown, Trash2, Pencil, ChevronLeft, ChevronRight, X, Settings2, Zap } from "lucide-react";
 import { COMMON_EXPENSE_CATEGORIES, EXPENSE_CATEGORIES } from "@/config/expenseCategories";
 import EmptyState from "@/components/EmptyState";
+import ErrorState from "@/components/ErrorState";
 
 const PAGE_SIZE = 20;
 
@@ -61,7 +62,7 @@ const ExpensePage = () => {
     enabled: hasModule("Divisions"),
   });
 
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading, isFetching, isError, refetch } = useQuery({
     queryKey: ["expense", startDate, endDate, page, PAGE_SIZE, category, divisionId],
     queryFn: () => expenseApi.getAll({ startDate, endDate, page, pageSize: PAGE_SIZE, category: category || undefined, divisionId: divisionId || undefined }),
     placeholderData: keepPreviousData,
@@ -182,6 +183,7 @@ const ExpensePage = () => {
           <Plus className="mr-2 h-4 w-4" /> {isApiLoading ? "Please wait..." : "Add Expense"}
         </Button>
 
+        {isError && <ErrorState message="Failed to load expenses" onRetry={refetch} />}
         <Card className={cn("transition-opacity duration-200", isFetching && !isLoading && "opacity-60")}>
           <CardContent className="divide-y divide-border py-0">
             {isLoading ? (
@@ -203,8 +205,8 @@ const ExpensePage = () => {
               <EmptyState message="No expense entries found" />
             ) : (
               <>
-                {items.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between py-3 px-1 rounded-lg hover:bg-muted/40 transition-colors -mx-1">
+                {items.map((item, index) => (
+                  <div key={item.id} className="animate-in fade-in slide-in-from-bottom-1 duration-200 fill-mode-both flex items-center justify-between py-3 px-1 rounded-lg hover:bg-muted/40 transition-colors -mx-1" style={{ animationDelay: `${index * 40}ms` }}>
                     <div className="flex items-center gap-3">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-expense/10">
                         <TrendingDown className="h-4 w-4 text-expense" />

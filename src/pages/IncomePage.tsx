@@ -8,6 +8,7 @@ import type { Income } from "@/types";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import EmptyState from "@/components/EmptyState";
+import ErrorState from "@/components/ErrorState";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -50,7 +51,7 @@ const IncomePage = () => {
     enabled: hasModule("Divisions"),
   });
 
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading, isFetching, isError, refetch } = useQuery({
     queryKey: ["income", startDate, endDate, page, PAGE_SIZE, divisionId],
     queryFn: () => incomeApi.getAll({ startDate, endDate, page, pageSize: PAGE_SIZE, divisionId: divisionId || undefined }),
     placeholderData: keepPreviousData,
@@ -117,6 +118,7 @@ const IncomePage = () => {
           <Plus className="mr-2 h-4 w-4" /> {isApiLoading ? "Please wait..." : "Add Income"}
         </Button>
 
+        {isError && <ErrorState message="Failed to load income" onRetry={refetch} />}
         <Card className={cn("transition-opacity duration-200", isFetching && !isLoading && "opacity-60")}>
           <CardContent className="divide-y divide-border py-0">
             {isLoading ? (
@@ -138,8 +140,8 @@ const IncomePage = () => {
               <EmptyState message="No income entries found" />
             ) : (
               <>
-                {items.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between py-3 px-1 rounded-lg hover:bg-muted/40 transition-colors -mx-1">
+                {items.map((item, index) => (
+                  <div key={item.id} className="animate-in fade-in slide-in-from-bottom-1 duration-200 fill-mode-both flex items-center justify-between py-3 px-1 rounded-lg hover:bg-muted/40 transition-colors -mx-1" style={{ animationDelay: `${index * 40}ms` }}>
                     <div className="flex items-center gap-3">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-income/10">
                         <TrendingUp className="h-4 w-4 text-income" />

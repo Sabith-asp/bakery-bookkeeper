@@ -22,6 +22,7 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import PageShell from "@/components/PageShell";
 import EmptyState from "@/components/EmptyState";
+import ErrorState from "@/components/ErrorState";
 import DatePickerDrawer from "@/components/DatePickerDrawer";
 import { useToast } from "@/hooks/use-toast";
 import { useApiLoading } from "@/state/apiLoading";
@@ -252,6 +253,9 @@ const TasksPage = () => {
     placeholderData: keepPreviousData,
     enabled: mainTab === 'team',
   });
+
+  const tasksError = mainTab === 'my' ? myQuery.isError : teamQuery.isError;
+  const tasksRefetch = mainTab === 'my' ? myQuery.refetch : teamQuery.refetch;
 
   const notesQuery = useQuery({
     queryKey: ['task-notes', noteDate],
@@ -525,6 +529,8 @@ const TasksPage = () => {
                 : 'Add Task'}
             </Button>
 
+            {tasksError && <ErrorState message="Failed to load tasks" onRetry={tasksRefetch} />}
+
             {/* Task list */}
             <Card
               className={cn(
@@ -586,25 +592,26 @@ const TasksPage = () => {
                     </div>
                   ))
                 ) : (
-                  tasks.map((task) => (
-                    <TaskCard
-                      key={task.id}
-                      task={task}
-                      currentUserId={currentUserId}
-                      showCreator={mainTab === 'team'}
-                      onComplete={(t) => {
-                        if (t.status === 'Completed') {
-                          completeMutation.mutate(t);
-                          return;
-                        }
-                        setPendingComplete(t);
-                      }}
-                      onMoveToTomorrow={(t) => {
-                        setPendingMove(t);
-                        setMoveDateValue(tomorrow);
-                      }}
-                      onDelete={(t) => setPendingDelete(t)}
-                    />
+                  tasks.map((task, index) => (
+                    <div key={task.id} className="animate-in fade-in slide-in-from-bottom-1 duration-200 fill-mode-both" style={{ animationDelay: `${index * 40}ms` }}>
+                      <TaskCard
+                        task={task}
+                        currentUserId={currentUserId}
+                        showCreator={mainTab === 'team'}
+                        onComplete={(t) => {
+                          if (t.status === 'Completed') {
+                            completeMutation.mutate(t);
+                            return;
+                          }
+                          setPendingComplete(t);
+                        }}
+                        onMoveToTomorrow={(t) => {
+                          setPendingMove(t);
+                          setMoveDateValue(tomorrow);
+                        }}
+                        onDelete={(t) => setPendingDelete(t)}
+                      />
+                    </div>
                   ))
                 )}
               </CardContent>

@@ -12,6 +12,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import OrgRoute from "@/components/OrgRoute";
 import ModuleRoute from "@/components/ModuleRoute";
 import AdminRoute from "@/components/AdminRoute";
+import LottieLoader from "@/components/LottieLoader";
 
 const LoginPage                = lazy(() => import("@/pages/LoginPage"));
 const DashboardPage            = lazy(() => import("@/pages/DashboardPage"));
@@ -44,11 +45,6 @@ const MorePage                 = lazy(() => import("@/pages/MorePage"));
 const ExpenseTemplatesPage     = lazy(() => import("@/pages/ExpenseTemplatesPage"));
 const NotFound                 = lazy(() => import("./pages/NotFound"));
 
-const PageLoader = () => (
-  <div className="flex h-screen items-center justify-center">
-    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-  </div>
-);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -86,7 +82,7 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Suspense fallback={<PageLoader />}>
+          <Suspense fallback={<LottieLoader />}>
           <Routes>
             {/* Public */}
             <Route path="/login" element={<LoginPage />} />
