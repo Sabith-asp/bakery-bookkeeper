@@ -1,0 +1,15 @@
+name: Keep Render Backend Alive
+
+on:
+  schedule:
+    - cron: '*/9 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    name: Ping Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping health endpoint
+        run: |
+          curl -fs "${{ secrets.VITE_API_BASE_URL }}/health" && echo "Backend is awake" || echo "Backend warming up (cold start in progress)"
