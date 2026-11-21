@@ -214,7 +214,7 @@ const AddDebtPage = () => {
         </div>
       </div>
 
-      <div className="fixed bottom-16 left-0 right-0 px-4 pb-2 md:px-6">
+      <div className="fixed bottom-[var(--bottom-nav-height)] left-0 right-0 px-4 pb-2 md:px-6">
         <div className="lg:max-w-2xl lg:mx-auto">
           <Button
             className="w-full h-12 text-base font-semibold"

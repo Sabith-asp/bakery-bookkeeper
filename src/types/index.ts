@@ -277,7 +277,7 @@ export type TaskVisibility = 'Personal' | 'Organisation';
 export type TaskActivityType =
   | 'Created' | 'StatusChanged' | 'Completed' | 'DateMoved'
   | 'CarryForward' | 'CommentAdded' | 'Updated' | 'VisibilityChanged'
-  | 'PriorityChanged';
+  | 'PriorityChanged' | 'FollowUpSet' | 'FollowUpCleared' | 'FollowUpResolved';
 
 export interface Task {
   id: string;
@@ -295,8 +295,13 @@ export interface Task {
   originalTargetDate: string;
   currentTargetDate: string;
   completedAt?: string;
+  needsFollowUp: boolean;
+  followUpDate?: string;
+  followUpNotes?: string;
+  followUpResolvedAt?: string;
   createdAt: string;
   updatedAt: string;
+  sortOrder?: number | null;
   activityLog?: TaskActivity[];
 }
 
@@ -338,6 +343,11 @@ export interface TaskFormData {
 export interface TaskSummary {
   todayCount: number;
   overdueCount: number;
+}
+
+export interface TaskListPage {
+  items: Task[];
+  nextCursor: string | null;
 }
 
 // ── Prayer Module ────────────────────────────────────────────────────────────

@@ -37,6 +37,9 @@ import {
   Building2,
   Lock,
   Flag,
+  Bell,
+  BellOff,
+  Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -65,6 +68,9 @@ const ACTIVITY_CONFIG: Record<
   CommentAdded:      { icon: <MessageSquare className="h-3 w-3" />,   color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',  label: () => 'Comment added' },
   VisibilityChanged: { icon: <Eye className="h-3 w-3" />,             color: 'bg-muted text-muted-foreground',        label: (a) => `Visibility: ${a.oldValue} → ${a.newValue}` },
   PriorityChanged:   { icon: <Flag className="h-3 w-3" />,            color: 'bg-amber-500/10 text-amber-600',        label: (a) => `Priority: ${a.oldValue} → ${a.newValue}` },
+  FollowUpSet:       { icon: <Bell className="h-3 w-3" />,             color: 'bg-violet-500/10 text-violet-600',      label: (a) => `Follow-up set for ${a.newValue}` },
+  FollowUpCleared:   { icon: <BellOff className="h-3 w-3" />,          color: 'bg-muted text-muted-foreground',        label: () => 'Follow-up cleared' },
+  FollowUpResolved:  { icon: <Check className="h-3 w-3" />,            color: 'bg-primary/10 text-primary',            label: () => 'Follow-up resolved' },
 };
 
 const TaskDetailPage = () => {
@@ -78,9 +84,12 @@ const TaskDetailPage = () => {
   const [showCommentSheet, setShowCommentSheet] = useState(false);
   const [showDateSheet, setShowDateSheet] = useState(false);
   const [showVisSheet, setShowVisSheet] = useState(false);
+  const [showFollowUpSheet, setShowFollowUpSheet] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [comment, setComment] = useState('');
   const [newDate, setNewDate] = useState(format(addDays(new Date(), 1), 'yyyy-MM-dd'));
+  const [followUpDate, setFollowUpDate] = useState(format(addDays(new Date(), 1), 'yyyy-MM-dd'));
+  const [followUpNotes, setFollowUpNotes] = useState('');
 
   const { data: task, isLoading } = useQuery({
     queryKey: ['task', id],
@@ -133,6 +142,25 @@ const TaskDetailPage = () => {
     onSuccess: () => { invalidate(); setShowVisSheet(false); toast({ title: 'Visibility updated' }); },
     onError: () =>
       toast({ title: 'Error', description: 'Failed to update visibility', variant: 'destructive' }),
+  });
+
+  const followUpMutation = useMutation({
+    mutationFn: (payload: { needsFollowUp: boolean; followUpDate?: string; followUpNotes?: string }) =>
+      taskApi.setFollowUp(id!, payload),
+    onSuccess: (_data, variables) => {
+      invalidate();
+      setShowFollowUpSheet(false);
+      toast({ title: variables.needsFollowUp ? 'Follow-up set' : 'Follow-up cleared' });
+    },
+    onError: () =>
+      toast({ title: 'Error', description: 'Failed to update follow-up', variant: 'destructive' }),
+  });
+
+  const resolveFollowUpMutation = useMutation({
+    mutationFn: () => taskApi.resolveFollowUp(id!),
+    onSuccess: () => { invalidate(); toast({ title: 'Follow-up resolved' }); },
+    onError: () =>
+      toast({ title: 'Error', description: 'Failed to resolve follow-up', variant: 'destructive' }),
   });
 
   const deleteMutation = useMutation({
@@ -310,6 +338,81 @@ const TaskDetailPage = () => {
                 </button>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Follow-up — only relevant once the task is actually done */}
+        {task.status === 'Completed' && (
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              Follow-up
+            </p>
+            {task.needsFollowUp ? (
+              <div
+                className={cn(
+                  "rounded-xl border p-3 space-y-2",
+                  task.followUpResolvedAt
+                    ? "border-border bg-muted/40"
+                    : "border-violet-500/20 bg-violet-500/10"
+                )}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold">
+                    {task.followUpResolvedAt ? (
+                      <Check className="h-3.5 w-3.5 text-primary" />
+                    ) : (
+                      <Bell className="h-3.5 w-3.5 text-violet-600" />
+                    )}
+                    <span className={task.followUpResolvedAt ? "text-muted-foreground" : "text-violet-700 dark:text-violet-400"}>
+                      {task.followUpResolvedAt
+                        ? `Resolved ${format(parseISO(task.followUpResolvedAt), 'd MMM')}`
+                        : `Due ${format(parseISO(task.followUpDate!), 'd MMM yyyy')}`}
+                    </span>
+                  </div>
+                  {!task.followUpResolvedAt && (
+                    <button
+                      className="text-[11px] font-semibold text-muted-foreground hover:text-foreground"
+                      onClick={() => {
+                        setFollowUpDate(task.followUpDate ? task.followUpDate.slice(0, 10) : followUpDate);
+                        setFollowUpNotes(task.followUpNotes ?? '');
+                        setShowFollowUpSheet(true);
+                      }}
+                    >
+                      Edit
+                    </button>
+                  )}
+                </div>
+                {task.followUpNotes && (
+                  <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                    {task.followUpNotes}
+                  </p>
+                )}
+                {!task.followUpResolvedAt && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full h-8 text-xs"
+                    onClick={() => resolveFollowUpMutation.mutate()}
+                    disabled={resolveFollowUpMutation.isPending}
+                  >
+                    {resolveFollowUpMutation.isPending ? 'Resolving...' : 'Mark follow-up resolved'}
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                className="w-full h-10 text-xs gap-1.5 border-dashed"
+                onClick={() => {
+                  setFollowUpDate(format(addDays(new Date(), 1), 'yyyy-MM-dd'));
+                  setFollowUpNotes('');
+                  setShowFollowUpSheet(true);
+                }}
+              >
+                <Bell className="h-3.5 w-3.5" />
+                Add follow-up
+              </Button>
+            )}
           </div>
         )}
 
@@ -504,6 +607,47 @@ const TaskDetailPage = () => {
                 ? 'Make Personal (Private)'
                 : 'Share with Organisation'}
             </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Follow-up sheet */}
+      <Sheet open={showFollowUpSheet} onOpenChange={setShowFollowUpSheet}>
+        <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto rounded-t-xl">
+          <SheetHeader className="pb-3">
+            <SheetTitle>{task.needsFollowUp ? 'Edit Follow-up' : 'Add Follow-up'}</SheetTitle>
+          </SheetHeader>
+          <div className="space-y-3 pb-4">
+            <DatePickerDrawer value={followUpDate} onChange={setFollowUpDate} allowFuture />
+            <Textarea
+              placeholder="What needs to happen next?"
+              value={followUpNotes}
+              onChange={(e) => setFollowUpNotes(e.target.value)}
+              className="min-h-[90px] resize-none"
+            />
+            <Button
+              className="w-full"
+              onClick={() =>
+                followUpMutation.mutate({
+                  needsFollowUp: true,
+                  followUpDate,
+                  followUpNotes: followUpNotes.trim() || undefined,
+                })
+              }
+              disabled={followUpMutation.isPending}
+            >
+              {followUpMutation.isPending ? 'Saving...' : 'Save follow-up'}
+            </Button>
+            {task.needsFollowUp && (
+              <Button
+                className="w-full"
+                variant="ghost"
+                onClick={() => followUpMutation.mutate({ needsFollowUp: false })}
+                disabled={followUpMutation.isPending}
+              >
+                Remove follow-up
+              </Button>
+            )}
           </div>
         </SheetContent>
       </Sheet>

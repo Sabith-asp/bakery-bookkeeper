@@ -1,9 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { format, addDays, subDays, parseISO, isToday, isBefore, startOfDay } from "date-fns";
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { DndContext, DragOverlay } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { taskApi } from "@/api/task";
 import type { Task, DailyNote } from "@/types";
+import { buildContainers, useMultiContainerDrag } from "./useMultiContainerDrag";
+import SortableItem from "./SortableItem";
+import DroppableContainer from "./DroppableContainer";
+import TaskBoard from "./TaskBoard";
 import { TASK_CATEGORIES } from "@/config/taskCategories";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,11 +51,17 @@ import {
   Lock,
   FileText,
   AlertCircle,
+  LayoutGrid,
+  List as ListIcon,
+  GripVertical,
+  Bell,
+  Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type MainTab = 'my' | 'team' | 'notes';
-type SubTab = 'today' | 'pending' | 'overdue' | 'completed';
+type SubTab = 'today' | 'pending' | 'overdue' | 'completed' | 'followups';
+type ViewMode = 'list' | 'board';
 
 const PRIORITY_COLORS: Record<string, string> = {
   High:   'text-destructive bg-destructive/10 border-destructive/20',
@@ -77,6 +89,7 @@ const TaskCard = ({
   onMoveToTomorrow,
   onDelete,
   showCreator = false,
+  dragHandle,
 }: {
   task: Task;
   currentUserId: string;
@@ -84,6 +97,7 @@ const TaskCard = ({
   onMoveToTomorrow: (t: Task) => void;
   onDelete: (t: Task) => void;
   showCreator?: boolean;
+  dragHandle?: React.ReactNode;
 }) => {
   const navigate = useNavigate();
   const isCompleted = task.status === 'Completed';
@@ -92,14 +106,20 @@ const TaskCard = ({
     !isCompleted &&
     isBefore(startOfDay(parseISO(task.currentTargetDate)), startOfDay(new Date()));
   const isOwner = task.createdByUserId === currentUserId;
+  const followUpPending = isCompleted && task.needsFollowUp && !task.followUpResolvedAt;
+  const followUpOverdue =
+    followUpPending &&
+    isBefore(startOfDay(parseISO(task.followUpDate!)), startOfDay(new Date()));
+  const followUpResolved = isCompleted && task.needsFollowUp && !!task.followUpResolvedAt;
 
   return (
     <div
       className={cn(
-        "flex items-start gap-3 py-3 px-1 -mx-1 rounded-lg hover:bg-muted/40 transition-colors",
+        "flex items-start gap-1 py-3 px-1 -mx-1 rounded-lg hover:bg-muted/40 transition-colors",
         isCompleted && "opacity-60"
       )}
     >
+      {dragHandle}
       {/* Checkbox */}
       <button
         className="mt-0.5 shrink-0 flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all"
@@ -161,6 +181,24 @@ const TaskCard = ({
               {formatDateShort(task.originalTargetDate)}
             </span>
           )}
+          {followUpPending && (
+            <span
+              className={cn(
+                "text-[10px] font-medium px-1.5 py-0.5 rounded border flex items-center gap-0.5",
+                followUpOverdue
+                  ? "text-destructive bg-destructive/10 border-destructive/20"
+                  : "text-violet-600 bg-violet-500/10 border-violet-500/20"
+              )}
+            >
+              <Bell className="h-2.5 w-2.5" />
+              Follow-up{followUpOverdue ? " overdue" : ""} · {formatDateShort(task.followUpDate!)}
+            </span>
+          )}
+          {followUpResolved && (
+            <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+              <Check className="h-2.5 w-2.5" /> Follow-up resolved
+            </span>
+          )}
         </div>
         {showCreator && (
           <p className="text-[10px] text-muted-foreground mt-0.5">
@@ -209,9 +247,12 @@ const TasksPage = () => {
   const currentUserId = user?.id ?? '';
 
   const [mainTab, setMainTab] = useState<MainTab>('my');
-  const [subTab, setSubTab] = useState<SubTab>('today');
+  const [subTab, setSubTab] = useState<SubTab>('pending');
+  const [view, setView] = useState<ViewMode>('board');
   const [catFilter, setCatFilter] = useState('');
   const [priFilter, setPriFilter] = useState('');
+  const [followUpOnly, setFollowUpOnly] = useState(false);
+  const scope: 'my' | 'team' = mainTab === 'team' ? 'team' : 'my';
 
   // Notes state
   const [noteDate, setNoteDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -231,32 +272,50 @@ const TasksPage = () => {
   const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd');
 
   // ── Queries ─────────────────────────────────────────────────────────────────
-  const myQuery = useQuery({
-    queryKey: ['tasks-my', subTab, catFilter, priFilter],
-    queryFn: () =>
+  // Board view needs every status at once (Pending/InProgress/Completed columns), not the
+  // date/status-filtered subTab view, so it asks the API for "all" instead.
+  const effectiveView = view === 'board' ? 'all' : subTab;
+
+  // Infinite, not a plain query: `nextCursor` is only ever non-null for the Completed bucket
+  // (the "completed" view, or the Completed column inside the board's "all" view) — every other
+  // view's single page already has everything, so `hasNextPage` there is just always false.
+  const myQuery = useInfiniteQuery({
+    queryKey: ['tasks-my', effectiveView, catFilter, priFilter, followUpOnly],
+    queryFn: ({ pageParam }) =>
       taskApi.getMyTasks({
-        view: subTab,
+        view: effectiveView,
         category: catFilter || undefined,
         priority: priFilter || undefined,
+        before: pageParam ?? undefined,
+        needsFollowUp: followUpOnly || undefined,
       }),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
     placeholderData: keepPreviousData,
     enabled: mainTab === 'my',
   });
 
-  const teamQuery = useQuery({
-    queryKey: ['tasks-team', subTab, catFilter, priFilter],
-    queryFn: () =>
+  const teamQuery = useInfiniteQuery({
+    queryKey: ['tasks-team', effectiveView, catFilter, priFilter, followUpOnly],
+    queryFn: ({ pageParam }) =>
       taskApi.getTeamTasks({
-        view: subTab,
+        view: effectiveView,
         category: catFilter || undefined,
         priority: priFilter || undefined,
+        before: pageParam ?? undefined,
+        needsFollowUp: followUpOnly || undefined,
       }),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
     placeholderData: keepPreviousData,
     enabled: mainTab === 'team',
   });
 
   const tasksError = mainTab === 'my' ? myQuery.isError : teamQuery.isError;
   const tasksRefetch = mainTab === 'my' ? myQuery.refetch : teamQuery.refetch;
+  const hasMoreCompleted = mainTab === 'my' ? myQuery.hasNextPage : teamQuery.hasNextPage;
+  const loadingMoreCompleted = mainTab === 'my' ? myQuery.isFetchingNextPage : teamQuery.isFetchingNextPage;
+  const loadMoreCompleted = () => (mainTab === 'my' ? myQuery.fetchNextPage() : teamQuery.fetchNextPage());
 
   const notesQuery = useQuery({
     queryKey: ['task-notes', noteDate],
@@ -356,26 +415,62 @@ const TasksPage = () => {
     );
   };
 
-  const tasks = mainTab === 'my' ? (myQuery.data ?? []) : (teamQuery.data ?? []);
+  const tasks = useMemo(
+    () =>
+      mainTab === 'my'
+        ? (myQuery.data?.pages.flatMap((p) => p.items) ?? [])
+        : (teamQuery.data?.pages.flatMap((p) => p.items) ?? []),
+    [mainTab, myQuery.data, teamQuery.data]
+  );
   const loading = mainTab === 'my' ? myQuery.isLoading : teamQuery.isLoading;
 
-  const overdueCount = (myQuery.data ?? []).filter(
+  const overdueCount = (myQuery.data?.pages.flatMap((p) => p.items) ?? []).filter(
     (t) =>
       t.status !== 'Completed' &&
       isBefore(startOfDay(parseISO(t.currentTargetDate)), startOfDay(new Date()))
   ).length;
 
-  // Group tasks by date for pending view
-  const groupedTasks = (() => {
-    if (subTab !== 'pending') return null;
-    const groups: Record<string, Task[]> = {};
-    tasks.forEach((t) => {
-      const key = t.currentTargetDate.slice(0, 10);
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(t);
-    });
-    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
-  })();
+  // "my" = private order, only this user sees it; "team" = shared order, the whole org sees it.
+  const reorderMutation = useMutation({
+    mutationFn: (orderedTaskIds: string[]) => taskApi.reorder(scope, orderedTaskIds),
+    onSuccess: () => invalidateTasks(),
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to save the new order', variant: 'destructive' });
+      invalidateTasks();
+    },
+  });
+
+  // Pending groups by date (so a drop on another date's group reschedules it); every other
+  // sub-tab is a single flat, reorderable list.
+  const listKeyOf = (t: Task) => (subTab === 'pending' ? t.currentTargetDate.slice(0, 10) : 'flat');
+  const listContainerKeys =
+    subTab === 'pending'
+      ? Array.from(new Set(tasks.map(listKeyOf))).sort((a, b) => a.localeCompare(b))
+      : ['flat'];
+
+  const {
+    containers: listContainers,
+    setContainers: setListContainers,
+    activeId: listActiveId,
+    sensors: listSensors,
+    collisionDetection: listCollisionDetection,
+    handleDragStart: listDragStart,
+    handleDragOver: listDragOver,
+    handleDragEnd: listDragEnd,
+    handleDragCancel: listDragCancel,
+  } = useMultiContainerDrag(async (containerKey, orderedIds, movedFrom, movedId) => {
+    if (movedFrom && subTab === 'pending') {
+      // Dropped on a different date group → reschedule first, then persist order within it
+      // (sequenced so the order-save's refetch can't land before the date change does).
+      await moveMutation.mutateAsync({ id: movedId, date: containerKey }).catch(() => {});
+    }
+    reorderMutation.mutate(orderedIds);
+  });
+
+  useEffect(() => {
+    setListContainers(buildContainers(tasks, listContainerKeys, listKeyOf, (t) => t.id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tasks, subTab]);
 
   return (
     <>
@@ -394,7 +489,7 @@ const TasksPage = () => {
               key={tab}
               onClick={() => {
                 setMainTab(tab);
-                setSubTab('today');
+                setSubTab('pending');
               }}
               className={cn(
                 "flex items-center justify-center gap-1.5 rounded-lg py-2 px-1 text-xs font-semibold transition-all overflow-hidden",
@@ -412,50 +507,97 @@ const TasksPage = () => {
         {/* ── My Tasks / Team ─────────────────────────────────────────────── */}
         {(mainTab === 'my' || mainTab === 'team') && (
           <>
-            {/* Sub-tab */}
-            <div className="flex flex-wrap gap-1">
-              {(['today', 'pending', 'overdue', 'completed'] as SubTab[]).map((tab) => (
+            {/* List / Board toggle */}
+            <div className="grid grid-cols-2 gap-1 rounded-xl border border-border bg-muted/40 p-1 max-w-full sm:max-w-[220px]">
+              {(
+                [
+                  ['board', 'Board', LayoutGrid],
+                  ['list', 'List', ListIcon],
+                ] as const
+              ).map(([v, label, Icon]) => (
                 <button
-                  key={tab}
-                  onClick={() => setSubTab(tab)}
+                  key={v}
+                  onClick={() => {
+                    setView(v);
+                    if (v !== 'board') setFollowUpOnly(false);
+                  }}
                   className={cn(
-                    "flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold rounded-lg border transition-all capitalize",
-                    subTab === tab
-                      ? tab === 'overdue'
-                        ? "bg-destructive text-white border-destructive shadow-sm"
-                        : "bg-primary text-primary-foreground border-primary shadow-sm"
-                      : "bg-background text-muted-foreground border-border hover:border-primary/40"
+                    "flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-semibold transition-all",
+                    view === v
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  {tab === 'today'
-                    ? 'Today'
-                    : tab === 'pending'
-                    ? 'Pending'
-                    : tab === 'overdue'
-                    ? 'Overdue'
-                    : 'Completed'}
-                  {tab === 'overdue' &&
-                    mainTab === 'my' &&
-                    overdueCount > 0 &&
-                    subTab !== 'overdue' && (
-                      <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-white/20 text-[9px] font-bold px-1">
-                        {overdueCount}
-                      </span>
-                    )}
+                  <Icon className="h-3.5 w-3.5" />
+                  {label}
                 </button>
               ))}
             </div>
 
-            {/* Overdue nudge on Today tab */}
-            {mainTab === 'my' && subTab === 'today' && overdueCount > 0 && (
-              <button
-                onClick={() => setSubTab('overdue')}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs font-medium"
-              >
-                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                {overdueCount} task{overdueCount !== 1 ? 's' : ''} carried forward from previous
-                days — tap to review
-              </button>
+            {view === 'board' ? (
+              <p className="text-[11px] text-muted-foreground">
+                Drag a card between columns to change its status. Drag up or down to reorder —{' '}
+                {mainTab === 'team' ? 'everyone in the org sees this order.' : 'only you see this order.'}
+              </p>
+            ) : (
+              <p className="text-[11px] text-muted-foreground">
+                Drag <GripVertical className="inline h-3 w-3 -mt-0.5" /> to reorder
+                {subTab === 'pending' ? ', or drop a task onto another date to reschedule it' : ''} —{' '}
+                {mainTab === 'team' ? 'everyone in the org sees this order.' : 'only you see this order.'}
+              </p>
+            )}
+
+            {view === 'list' && (
+              <>
+                {/* Sub-tab */}
+                <div className="flex flex-wrap gap-1">
+                  {(['today', 'pending', 'overdue', 'completed', 'followups'] as SubTab[]).map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setSubTab(tab)}
+                      className={cn(
+                        "flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold rounded-lg border transition-all capitalize",
+                        subTab === tab
+                          ? tab === 'overdue'
+                            ? "bg-destructive text-white border-destructive shadow-sm"
+                            : "bg-primary text-primary-foreground border-primary shadow-sm"
+                          : "bg-background text-muted-foreground border-border hover:border-primary/40"
+                      )}
+                    >
+                      {tab === 'followups' && <Bell className="h-3 w-3" />}
+                      {tab === 'today'
+                        ? 'Today'
+                        : tab === 'pending'
+                        ? 'Pending'
+                        : tab === 'overdue'
+                        ? 'Overdue'
+                        : tab === 'followups'
+                        ? 'Follow-ups'
+                        : 'Completed'}
+                      {tab === 'overdue' &&
+                        mainTab === 'my' &&
+                        overdueCount > 0 &&
+                        subTab !== 'overdue' && (
+                          <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-white/20 text-[9px] font-bold px-1">
+                            {overdueCount}
+                          </span>
+                        )}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Overdue nudge on Today tab */}
+                {mainTab === 'my' && subTab === 'today' && overdueCount > 0 && (
+                  <button
+                    onClick={() => setSubTab('overdue')}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs font-medium"
+                  >
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                    {overdueCount} task{overdueCount !== 1 ? 's' : ''} carried forward from previous
+                    days — tap to review
+                  </button>
+                )}
+              </>
             )}
 
             {/* Category filter chips */}
@@ -511,6 +653,25 @@ const TasksPage = () => {
               ))}
             </div>
 
+            {/* Needs-follow-up filter — only meaningful on the board, where Completed cards with
+                an unresolved follow-up are otherwise mixed in with everything else. */}
+            {view === 'board' && (
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  onClick={() => setFollowUpOnly((prev) => !prev)}
+                  className={cn(
+                    "flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold rounded-lg border transition-all",
+                    followUpOnly
+                      ? "bg-violet-600 text-white border-violet-600 shadow-sm"
+                      : "bg-background text-muted-foreground border-border"
+                  )}
+                >
+                  <Bell className="h-3 w-3" />
+                  Needs follow-up
+                </button>
+              </div>
+            )}
+
             {/* Add button */}
             <Button
               className="w-full h-11 md:h-10 md:max-w-xs"
@@ -532,78 +693,132 @@ const TasksPage = () => {
 
             {tasksError && <ErrorState message="Failed to load tasks" onRetry={tasksRefetch} />}
 
-            {/* Task list */}
-            <Card>
-              <CardContent className="divide-y divide-border py-0">
-                {loading || myQuery.isFetching || teamQuery.isFetching ? (
+            {/* Task list / board — a "Load more" fetch keeps the existing list on screen instead
+                of blanking it out, so it's excluded from this full-card loading state. */}
+            {(loading || (mainTab === 'my' ? myQuery.isFetching : teamQuery.isFetching)) &&
+            !loadingMoreCompleted ? (
+              <Card>
+                <CardContent className="py-0">
                   <CardLoader />
-                ) : tasks.length === 0 ? (
+                </CardContent>
+              </Card>
+            ) : tasks.length === 0 ? (
+              <Card>
+                <CardContent className="py-0">
                   <EmptyState
                     message={
                       subTab === 'overdue'
                         ? "No overdue tasks — great work!"
                         : subTab === 'completed'
                         ? "No completed tasks yet"
+                        : subTab === 'followups'
+                        ? "No follow-ups pending"
                         : "No tasks found"
                     }
                   />
-                ) : groupedTasks ? (
-                  // Grouped by date for pending view
-                  groupedTasks.map(([date, group]) => (
-                    <div key={date}>
-                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider pt-3 pb-1">
-                        {isToday(parseISO(date))
-                          ? 'Today'
-                          : format(parseISO(date), 'd MMM, EEE')}
-                        <span className="ml-1 font-normal">({group.length})</span>
-                      </p>
-                      {group.map((task) => (
-                        <TaskCard
-                          key={task.id}
-                          task={task}
-                          currentUserId={currentUserId}
-                          showCreator={mainTab === 'team'}
-                          onComplete={(t) => {
-                            if (t.status === 'Completed') {
-                              completeMutation.mutate(t);
-                              return;
-                            }
-                            setPendingComplete(t);
-                          }}
-                          onMoveToTomorrow={(t) => {
-                            setPendingMove(t);
-                            setMoveDateValue(tomorrow);
-                          }}
-                          onDelete={(t) => setPendingDelete(t)}
-                        />
-                      ))}
+                </CardContent>
+              </Card>
+            ) : view === 'board' ? (
+              <TaskBoard
+                tasks={tasks}
+                scope={scope}
+                currentUserId={currentUserId}
+                hasMoreCompleted={hasMoreCompleted}
+                loadingMoreCompleted={loadingMoreCompleted}
+                onLoadMoreCompleted={loadMoreCompleted}
+              />
+            ) : (
+              <Card>
+                <CardContent className="divide-y divide-border py-0">
+                  <DndContext
+                    sensors={listSensors}
+                    collisionDetection={listCollisionDetection}
+                    onDragStart={listDragStart}
+                    onDragOver={listDragOver}
+                    onDragEnd={listDragEnd}
+                    onDragCancel={listDragCancel}
+                  >
+                    {listContainerKeys.map((key) => {
+                      const ids = listContainers[key] ?? [];
+                      // Keep a group mounted (so it stays a valid drop target) while a drag is
+                      // in flight, even if dragging its last card out just emptied it.
+                      if (ids.length === 0 && !listActiveId) return null;
+                      return (
+                        <DroppableContainer key={key} id={key} className="py-1">
+                          {subTab === 'pending' && (
+                            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider pt-3 pb-1">
+                              {isToday(parseISO(key)) ? 'Today' : format(parseISO(key), 'd MMM, EEE')}
+                              <span className="ml-1 font-normal">({ids.length})</span>
+                            </p>
+                          )}
+                          <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+                            {ids.map((id) => {
+                              const task = tasks.find((t) => t.id === id);
+                              if (!task) return null;
+                              return (
+                                <SortableItem key={id} id={id}>
+                                  {(dragHandle) => (
+                                    <TaskCard
+                                      task={task}
+                                      currentUserId={currentUserId}
+                                      showCreator={mainTab === 'team'}
+                                      dragHandle={dragHandle}
+                                      onComplete={(t) => {
+                                        if (t.status === 'Completed') {
+                                          completeMutation.mutate(t);
+                                          return;
+                                        }
+                                        setPendingComplete(t);
+                                      }}
+                                      onMoveToTomorrow={(t) => {
+                                        setPendingMove(t);
+                                        setMoveDateValue(tomorrow);
+                                      }}
+                                      onDelete={(t) => setPendingDelete(t)}
+                                    />
+                                  )}
+                                </SortableItem>
+                              );
+                            })}
+                          </SortableContext>
+                        </DroppableContainer>
+                      );
+                    })}
+                    <DragOverlay>
+                      {listActiveId
+                        ? (() => {
+                            const dragged = tasks.find((t) => t.id === listActiveId);
+                            return dragged ? (
+                              <div className="rounded-lg border border-primary/40 bg-card shadow-lg px-1">
+                                <TaskCard
+                                  task={dragged}
+                                  currentUserId={currentUserId}
+                                  showCreator={mainTab === 'team'}
+                                  onComplete={() => {}}
+                                  onMoveToTomorrow={() => {}}
+                                  onDelete={() => {}}
+                                />
+                              </div>
+                            ) : null;
+                          })()
+                        : null}
+                    </DragOverlay>
+                  </DndContext>
+                  {hasMoreCompleted && subTab === 'completed' && (
+                    <div className="py-3">
+                      <Button
+                        variant="outline"
+                        className="w-full h-9 text-xs"
+                        onClick={loadMoreCompleted}
+                        disabled={loadingMoreCompleted}
+                      >
+                        {loadingMoreCompleted ? 'Loading...' : 'Load more'}
+                      </Button>
                     </div>
-                  ))
-                ) : (
-                  tasks.map((task, index) => (
-                    <div key={task.id} className="animate-in fade-in slide-in-from-bottom-1 duration-200 fill-mode-both" style={{ animationDelay: `${index * 40}ms` }}>
-                      <TaskCard
-                        task={task}
-                        currentUserId={currentUserId}
-                        showCreator={mainTab === 'team'}
-                        onComplete={(t) => {
-                          if (t.status === 'Completed') {
-                            completeMutation.mutate(t);
-                            return;
-                          }
-                          setPendingComplete(t);
-                        }}
-                        onMoveToTomorrow={(t) => {
-                          setPendingMove(t);
-                          setMoveDateValue(tomorrow);
-                        }}
-                        onDelete={(t) => setPendingDelete(t)}
-                      />
-                    </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </>
         )}
 

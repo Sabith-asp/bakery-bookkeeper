@@ -1,14 +1,20 @@
 import apiClient from "./client";
-import type { Task, TaskActivity, DailyNote, TaskSummary } from "@/types";
+import type { Task, TaskActivity, DailyNote, TaskSummary, TaskListPage } from "@/types";
 
 export const taskApi = {
+  // `nextCursor` is only ever non-null for the Completed bucket (the "completed" view itself,
+  // or the Completed column embedded in the board's "all" view) — every other view returns it
+  // as null since those lists stay small by nature and never need a second page.
   getMyTasks: async (params?: {
     view?: string;
     status?: string;
     priority?: string;
     category?: string;
     search?: string;
-  }): Promise<Task[]> => {
+    before?: string;
+    limit?: number;
+    needsFollowUp?: boolean;
+  }): Promise<TaskListPage> => {
     const { data } = await apiClient.get("/tasks/my", { params });
     return data;
   },
@@ -19,7 +25,10 @@ export const taskApi = {
     priority?: string;
     category?: string;
     search?: string;
-  }): Promise<Task[]> => {
+    before?: string;
+    limit?: number;
+    needsFollowUp?: boolean;
+  }): Promise<TaskListPage> => {
     const { data } = await apiClient.get("/tasks/team", { params });
     return data;
   },
@@ -63,6 +72,11 @@ export const taskApi = {
     await apiClient.patch(`/tasks/${id}/status`, { status });
   },
 
+  // scope: "my" (private order, only you see it) or "team" (shared order, visible to the whole org)
+  reorder: async (scope: 'my' | 'team', orderedTaskIds: string[]): Promise<void> => {
+    await apiClient.patch(`/tasks/reorder`, { scope, orderedTaskIds });
+  },
+
   changeDate: async (id: string, newDate: string): Promise<void> => {
     await apiClient.patch(`/tasks/${id}/target-date`, { newDate });
   },
@@ -73,6 +87,14 @@ export const taskApi = {
 
   changeVisibility: async (id: string, visibility: string): Promise<void> => {
     await apiClient.patch(`/tasks/${id}/visibility`, { visibility });
+  },
+
+  setFollowUp: async (id: string, payload: { needsFollowUp: boolean; followUpDate?: string; followUpNotes?: string }): Promise<void> => {
+    await apiClient.patch(`/tasks/${id}/follow-up`, payload);
+  },
+
+  resolveFollowUp: async (id: string): Promise<void> => {
+    await apiClient.patch(`/tasks/${id}/follow-up/resolve`);
   },
 
   addComment: async (id: string, comment: string): Promise<void> => {

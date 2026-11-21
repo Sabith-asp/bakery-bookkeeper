@@ -6,6 +6,10 @@
 
 @layer base {
   :root {
+    /* BottomNav's real rendered height (icon + label + padding) plus the home-indicator safe
+       area it reserves via .pb-safe — a sticky action bar above it must clear this whole height,
+       not the shorter bare 4rem a plain `bottom-16` assumes. */
+    --bottom-nav-height: calc(4.875rem + env(safe-area-inset-bottom, 0px));
     --background: 220 20% 97%;
     --foreground: 222 25% 11%;
 

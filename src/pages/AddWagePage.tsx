@@ -265,7 +265,7 @@ const AddWagePage = () => {
       </form>
 
       {/* Sticky submit */}
-      <div className="fixed bottom-16 left-0 right-0 px-4 md:px-6 pb-3 pt-2 bg-background/95 backdrop-blur-sm border-t border-border/60 z-30">
+      <div className="fixed bottom-[var(--bottom-nav-height)] left-0 right-0 px-4 md:px-6 pb-3 pt-2 bg-background/95 backdrop-blur-sm border-t border-border/60 z-30">
         <div className="lg:max-w-2xl lg:mx-auto">
           <Button
             type="submit"
