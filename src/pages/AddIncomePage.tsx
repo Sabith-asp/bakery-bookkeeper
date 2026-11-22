@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
 import { incomeApi } from "@/api/income";
 import { divisionApi } from "@/api/division";
 import type { Income } from "@/types";
@@ -17,6 +16,7 @@ import { useApiLoading } from "@/state/apiLoading";
 import { ArrowLeft, TrendingUp, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SaveSuccessOverlay from "@/components/SaveSuccessOverlay";
+import { useOrgTimezone, useOrgToday } from "@/lib/dateUtils";
 
 const MAX_DESC = 200;
 
@@ -27,6 +27,8 @@ const AddIncomePage = () => {
   const queryClient = useQueryClient();
   const isApiLoading = useApiLoading();
   const { hasModule } = useAuth();
+  const orgTimezone = useOrgTimezone();
+  const orgToday = useOrgToday();
 
   const editItem = location.state?.item as Income | undefined;
   const isEditMode = !!editItem;
@@ -35,7 +37,7 @@ const AddIncomePage = () => {
   const [description, setDescription] = useState(editItem?.description ?? "");
   const [paymentMethod, setPaymentMethod] = useState(editItem?.paymentMethod ?? "");
   const [divisionId, setDivisionId] = useState(editItem?.divisionId ?? "");
-  const [date, setDate] = useState(editItem ? editItem.date.substring(0, 10) : format(new Date(), "yyyy-MM-dd"));
+  const [date, setDate] = useState(editItem ? editItem.date.substring(0, 10) : orgToday);
   const [showSuccess, setShowSuccess] = useState(false);
 
   const { data: divisions = [] } = useQuery({
@@ -130,7 +132,7 @@ const AddIncomePage = () => {
           {/* Date */}
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-foreground">Date</label>
-            <DatePickerDrawer value={date} onChange={setDate} />
+            <DatePickerDrawer value={date} onChange={setDate} orgTimezone={orgTimezone} />
           </div>
 
           <div className="h-px bg-border/60" />

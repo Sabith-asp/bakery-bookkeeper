@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
 import { inventoryApi } from "@/api/inventory";
 import { divisionApi } from "@/api/division";
 import { Button } from "@/components/ui/button";
@@ -18,6 +17,7 @@ import { PAYMENT_METHODS } from "@/config/paymentMethods";
 import { ArrowLeft, TrendingDown, TrendingUp, Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SaveSuccessOverlay from "@/components/SaveSuccessOverlay";
+import { useOrgTimezone, useOrgToday } from "@/lib/dateUtils";
 
 type TxType = "Purchase" | "Sale";
 
@@ -27,6 +27,8 @@ const AddTransactionPage = () => {
   const queryClient = useQueryClient();
   const isApiLoading = useApiLoading();
   const { hasModule } = useAuth();
+  const orgTimezone = useOrgTimezone();
+  const orgToday = useOrgToday();
 
   const [txType, setTxType]                         = useState<TxType>("Purchase");
   const [productId, setProductId]                   = useState("");
@@ -37,7 +39,7 @@ const AddTransactionPage = () => {
   const [paymentMethod, setPaymentMethod]           = useState("");
   const [divisionId, setDivisionId]                 = useState("");
   const [note, setNote]                             = useState("");
-  const [date, setDate]                             = useState(format(new Date(), "yyyy-MM-dd"));
+  const [date, setDate]                             = useState(orgToday);
   const [showSuccess, setShowSuccess]               = useState(false);
 
   const { data: productsData } = useQuery({
@@ -293,7 +295,7 @@ const AddTransactionPage = () => {
           {/* Date */}
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-foreground">Date</label>
-            <DatePickerDrawer value={date} onChange={setDate} />
+            <DatePickerDrawer value={date} onChange={setDate} orgTimezone={orgTimezone} />
           </div>
 
           <div className="h-px bg-border/60" />

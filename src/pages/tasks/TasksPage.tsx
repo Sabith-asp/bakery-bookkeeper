@@ -58,6 +58,7 @@ import {
   Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useOrgTimezone, useOrgToday, timeInTz } from "@/lib/dateUtils";
 
 type MainTab = 'my' | 'team' | 'notes';
 type SubTab = 'today' | 'pending' | 'overdue' | 'completed' | 'followups';
@@ -100,16 +101,17 @@ const TaskCard = ({
   dragHandle?: React.ReactNode;
 }) => {
   const navigate = useNavigate();
+  const orgToday = startOfDay(parseISO(useOrgToday()));
   const isCompleted = task.status === 'Completed';
   const carried = isCarriedForward(task);
   const isOverdue =
     !isCompleted &&
-    isBefore(startOfDay(parseISO(task.currentTargetDate)), startOfDay(new Date()));
+    isBefore(startOfDay(parseISO(task.currentTargetDate)), orgToday);
   const isOwner = task.createdByUserId === currentUserId;
   const followUpPending = isCompleted && task.needsFollowUp && !task.followUpResolvedAt;
   const followUpOverdue =
     followUpPending &&
-    isBefore(startOfDay(parseISO(task.followUpDate!)), startOfDay(new Date()));
+    isBefore(startOfDay(parseISO(task.followUpDate!)), orgToday);
   const followUpResolved = isCompleted && task.needsFollowUp && !!task.followUpResolvedAt;
 
   return (
@@ -245,6 +247,8 @@ const TasksPage = () => {
   const isApiLoading = useApiLoading();
   const { user } = useAuth();
   const currentUserId = user?.id ?? '';
+  const orgTimezone = useOrgTimezone();
+  const orgToday = useOrgToday();
 
   const [mainTab, setMainTab] = useState<MainTab>('my');
   const [subTab, setSubTab] = useState<SubTab>('pending');
@@ -255,7 +259,7 @@ const TasksPage = () => {
   const scope: 'my' | 'team' = mainTab === 'team' ? 'team' : 'my';
 
   // Notes state
-  const [noteDate, setNoteDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [noteDate, setNoteDate] = useState(orgToday);
   const [personalContent, setPersonalContent] = useState('');
   const [orgContent, setOrgContent] = useState('');
   const [noteSaving, setNoteSaving] = useState(false);
@@ -265,11 +269,11 @@ const TasksPage = () => {
   const [pendingDelete, setPendingDelete] = useState<Task | null>(null);
   const [pendingMove, setPendingMove] = useState<Task | null>(null);
   const [moveDateValue, setMoveDateValue] = useState(
-    format(addDays(new Date(), 1), 'yyyy-MM-dd')
+    format(addDays(parseISO(orgToday), 1), 'yyyy-MM-dd')
   );
 
-  const today = format(new Date(), 'yyyy-MM-dd');
-  const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd');
+  const today = orgToday;
+  const tomorrow = format(addDays(parseISO(orgToday), 1), 'yyyy-MM-dd');
 
   // ── Queries ─────────────────────────────────────────────────────────────────
   // Board view needs every status at once (Pending/InProgress/Completed columns), not the
@@ -427,7 +431,7 @@ const TasksPage = () => {
   const overdueCount = (myQuery.data?.pages.flatMap((p) => p.items) ?? []).filter(
     (t) =>
       t.status !== 'Completed' &&
-      isBefore(startOfDay(parseISO(t.currentTargetDate)), startOfDay(new Date()))
+      isBefore(startOfDay(parseISO(t.currentTargetDate)), startOfDay(parseISO(orgToday)))
   ).length;
 
   // "my" = private order, only this user sees it; "team" = shared order, the whole org sees it.
@@ -877,7 +881,7 @@ const TasksPage = () => {
                   {noteSaving
                     ? 'Saving...'
                     : notesQuery.data?.personal
-                    ? `Saved · ${format(parseISO(notesQuery.data.personal.updatedAt), 'h:mm a')}`
+                    ? `Saved · ${timeInTz(notesQuery.data.personal.updatedAt, orgTimezone)}`
                     : 'Auto-saves on blur'}
                 </p>
                 <Button
@@ -912,7 +916,7 @@ const TasksPage = () => {
                     <CardContent className="py-2.5 px-3">
                       <p className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 mb-1">
                         {note.createdByUsername} ·{' '}
-                        {format(parseISO(note.updatedAt), 'h:mm a')}
+                        {timeInTz(note.updatedAt, orgTimezone)}
                       </p>
                       <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
                         {note.content}
@@ -1078,7 +1082,7 @@ const TasksPage = () => {
                 onClick={() =>
                   moveMutation.mutate({
                     id: pendingMove!.id,
-                    date: format(addDays(new Date(), 3), 'yyyy-MM-dd'),
+                    date: format(addDays(parseISO(orgToday), 3), 'yyyy-MM-dd'),
                   })
                 }
               >
@@ -1089,7 +1093,7 @@ const TasksPage = () => {
                 onClick={() =>
                   moveMutation.mutate({
                     id: pendingMove!.id,
-                    date: format(addDays(new Date(), 7), 'yyyy-MM-dd'),
+                    date: format(addDays(parseISO(orgToday), 7), 'yyyy-MM-dd'),
                   })
                 }
               >
@@ -1100,6 +1104,7 @@ const TasksPage = () => {
               value={moveDateValue}
               onChange={setMoveDateValue}
               allowFuture
+              orgTimezone={orgTimezone}
             />
             <Button
               className="w-full h-11 md:h-10 md:max-w-xs"

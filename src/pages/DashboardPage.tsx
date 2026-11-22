@@ -15,11 +15,13 @@ import TrendChart from "@/components/TrendChart";
 import { TrendingUp, TrendingDown, Users, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
+import { useOrgTimezone, formatInTz, todayInTz } from "@/lib/dateUtils";
 
 const DashboardPage = () => {
   const navigate = useNavigate();
   const { hasModule } = useAuth();
-  const today = format(new Date(), "yyyy-MM-dd");
+  const orgTimezone = useOrgTimezone();
+  const today = todayInTz(orgTimezone);
 
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
@@ -74,8 +76,8 @@ const DashboardPage = () => {
   const isToday = startDate === today && endDate === today;
 
   return (
-    <PageShell title="Dashboard" subtitle={format(new Date(), "EEEE, MMM d")}>
-      <DateRangeFilter startDate={startDate} endDate={endDate} onDateChange={handleDateChange} />
+    <PageShell title="Dashboard" subtitle={formatInTz(today, { weekday: "long", month: "short", day: "numeric" }, orgTimezone)}>
+      <DateRangeFilter startDate={startDate} endDate={endDate} onDateChange={handleDateChange} orgTimezone={orgTimezone} />
 
         {/* Division filter */}
         {divisions.length > 0 && (
@@ -213,7 +215,7 @@ const DashboardPage = () => {
                         <div>
                           <p className="text-sm font-medium text-foreground">{item.description}</p>
                           <p className="text-xs text-muted-foreground">
-                            {new Date(item.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}
+                            {formatInTz(item.date, {}, orgTimezone)}
                           </p>
                         </div>
                       </div>
@@ -229,7 +231,7 @@ const DashboardPage = () => {
                         <div>
                           <p className="text-sm font-medium text-foreground">{item.description}</p>
                           <p className="text-xs text-muted-foreground">
-                            {new Date(item.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}
+                            {formatInTz(item.date, {}, orgTimezone)}
                           </p>
                         </div>
                       </div>
@@ -246,7 +248,7 @@ const DashboardPage = () => {
                           <p className="text-sm font-medium text-foreground">{item.employeeName || "Unknown Employee"}</p>
                           <p className="text-xs text-muted-foreground">
                             {item.description ? `${item.description} · ` : ""}
-                            {new Date(item.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}
+                            {formatInTz(item.date, {}, orgTimezone)}
                           </p>
                         </div>
                       </div>

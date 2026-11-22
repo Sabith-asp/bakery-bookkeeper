@@ -42,6 +42,7 @@ import {
   Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useOrgTimezone, shortDate, formatInTz, dateTimeInTz, useOrgToday } from "@/lib/dateUtils";
 
 const PRIORITY_COLORS: Record<string, string> = {
   High:   'text-destructive bg-destructive/10 border-destructive/20',
@@ -80,6 +81,8 @@ const TaskDetailPage = () => {
   const qc = useQueryClient();
   const { user } = useAuth();
   const currentUserId = user?.id ?? '';
+  const orgTimezone = useOrgTimezone();
+  const orgToday = useOrgToday();
 
   const [showCommentSheet, setShowCommentSheet] = useState(false);
   const [showDateSheet, setShowDateSheet] = useState(false);
@@ -87,8 +90,8 @@ const TaskDetailPage = () => {
   const [showFollowUpSheet, setShowFollowUpSheet] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [comment, setComment] = useState('');
-  const [newDate, setNewDate] = useState(format(addDays(new Date(), 1), 'yyyy-MM-dd'));
-  const [followUpDate, setFollowUpDate] = useState(format(addDays(new Date(), 1), 'yyyy-MM-dd'));
+  const [newDate, setNewDate] = useState(format(addDays(parseISO(orgToday), 1), 'yyyy-MM-dd'));
+  const [followUpDate, setFollowUpDate] = useState(format(addDays(parseISO(orgToday), 1), 'yyyy-MM-dd'));
   const [followUpNotes, setFollowUpNotes] = useState('');
 
   const { data: task, isLoading } = useQuery({
@@ -277,7 +280,7 @@ const TaskDetailPage = () => {
                 </p>
               )}
               <p>
-                Created: {format(parseISO(task.createdAt), 'd MMM yyyy')} by{' '}
+                Created: {shortDate(task.createdAt, orgTimezone)} by{' '}
                 {task.createdByUsername}
               </p>
               {task.assignedToUsername && (
@@ -365,7 +368,7 @@ const TaskDetailPage = () => {
                     )}
                     <span className={task.followUpResolvedAt ? "text-muted-foreground" : "text-violet-700 dark:text-violet-400"}>
                       {task.followUpResolvedAt
-                        ? `Resolved ${format(parseISO(task.followUpResolvedAt), 'd MMM')}`
+                        ? `Resolved ${formatInTz(task.followUpResolvedAt, { day: 'numeric', month: 'short' }, orgTimezone)}`
                         : `Due ${format(parseISO(task.followUpDate!), 'd MMM yyyy')}`}
                     </span>
                   </div>
@@ -404,7 +407,7 @@ const TaskDetailPage = () => {
                 variant="outline"
                 className="w-full h-10 text-xs gap-1.5 border-dashed"
                 onClick={() => {
-                  setFollowUpDate(format(addDays(new Date(), 1), 'yyyy-MM-dd'));
+                  setFollowUpDate(format(addDays(parseISO(orgToday), 1), 'yyyy-MM-dd'));
                   setFollowUpNotes('');
                   setShowFollowUpSheet(true);
                 }}
@@ -467,7 +470,7 @@ const TaskDetailPage = () => {
                   const timeAgo = formatDistanceToNow(parseISO(entry.createdAt), {
                     addSuffix: true,
                   });
-                  const exactTime = format(parseISO(entry.createdAt), 'd MMM, h:mm a');
+                  const exactTime = dateTimeInTz(entry.createdAt, orgTimezone);
 
                   return (
                     <div key={entry.id} className="flex gap-3">
@@ -490,11 +493,13 @@ const TaskDetailPage = () => {
                                 </span>
                               )}
                           </p>
-                          <span
-                            className="text-[10px] text-muted-foreground shrink-0"
-                            title={exactTime}
-                          >
-                            {timeAgo}
+                          <span className="flex flex-col items-end shrink-0" title={exactTime}>
+                            <span className="text-[10px] text-muted-foreground">
+                              {timeAgo}
+                            </span>
+                            <span className="text-[9px] text-muted-foreground/70">
+                              {exactTime}
+                            </span>
                           </span>
                         </div>
                         {entry.comment && (
@@ -558,7 +563,7 @@ const TaskDetailPage = () => {
                   className="text-xs h-10"
                   onClick={() =>
                     dateMutation.mutate(
-                      format(addDays(new Date(), days), 'yyyy-MM-dd')
+                      format(addDays(parseISO(orgToday), days), 'yyyy-MM-dd')
                     )
                   }
                   disabled={dateMutation.isPending}
@@ -567,7 +572,7 @@ const TaskDetailPage = () => {
                 </Button>
               ))}
             </div>
-            <DatePickerDrawer value={newDate} onChange={setNewDate} allowFuture />
+            <DatePickerDrawer value={newDate} onChange={setNewDate} allowFuture orgTimezone={orgTimezone} />
             <Button
               className="w-full"
               onClick={() => dateMutation.mutate(newDate)}
@@ -618,7 +623,7 @@ const TaskDetailPage = () => {
             <SheetTitle>{task.needsFollowUp ? 'Edit Follow-up' : 'Add Follow-up'}</SheetTitle>
           </SheetHeader>
           <div className="space-y-3 pb-4">
-            <DatePickerDrawer value={followUpDate} onChange={setFollowUpDate} allowFuture />
+            <DatePickerDrawer value={followUpDate} onChange={setFollowUpDate} allowFuture orgTimezone={orgTimezone} />
             <Textarea
               placeholder="What needs to happen next?"
               value={followUpNotes}

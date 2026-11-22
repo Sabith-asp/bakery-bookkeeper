@@ -13,12 +13,14 @@ import { useToast } from "@/hooks/use-toast";
 import { useApiLoading } from "@/state/apiLoading";
 import { Plus, Pencil, Trash2, Check, X, ChevronRight } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
+import { useOrgTimezone, shortDate } from "@/lib/dateUtils";
 
 const EmployeesPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isApiLoading = useApiLoading();
+  const orgTimezone = useOrgTimezone();
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
@@ -179,7 +181,7 @@ const EmployeesPage = () => {
                             const summary = getWageSummary(employee.id);
                             return summary
                               ? `₹${summary.totalAmount.toLocaleString("en-IN")} · ${summary.recordCount} ${summary.recordCount === 1 ? "entry" : "entries"}`
-                              : `Since ${new Date(employee.createdAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", year: "numeric" })}`;
+                              : `Since ${shortDate(employee.createdAt, orgTimezone)}`;
                           })()}
                         </p>
                       </div>

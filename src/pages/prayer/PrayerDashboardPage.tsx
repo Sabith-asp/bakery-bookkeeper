@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { format, parseISO } from "date-fns";
+import { timeInTz } from "@/lib/dateUtils";
 import { prayerApi } from "@/api/prayer";
 import type { PrayerRecord, PrayerStatus } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
@@ -67,9 +67,10 @@ interface PrayerCardProps {
   record: PrayerRecord;
   isCurrent: boolean;
   onAction: (record: PrayerRecord) => void;
+  prayerTimezone: string;
 }
 
-const PrayerCard = ({ record, isCurrent, onAction }: PrayerCardProps) => {
+const PrayerCard = ({ record, isCurrent, onAction, prayerTimezone }: PrayerCardProps) => {
   const style    = STATUS_STYLE[record.status] ?? STATUS_STYLE.Upcoming;
   const isDone   = COMPLETED_STATUSES.includes(record.status);
   const isActive = ACTIVE_STATUSES.includes(record.status);
@@ -104,7 +105,7 @@ const PrayerCard = ({ record, isCurrent, onAction }: PrayerCardProps) => {
         </div>
         {isDone && record.actualCompletionTime && (
           <p className="text-[10px] text-muted-foreground mt-0.5">
-            Completed at {format(parseISO(record.actualCompletionTime), "hh:mm a")}
+            Completed at {timeInTz(record.actualCompletionTime, prayerTimezone)}
             {record.congregationType && ` · ${record.congregationType}`}
           </p>
         )}
@@ -454,6 +455,7 @@ const PrayerDashboardPage = () => {
                     record={record}
                     isCurrent={data?.currentPrayer === record.prayerName}
                     onAction={setActiveRecord}
+                    prayerTimezone={data?.orgSettings?.timezone ?? "UTC"}
                   />
                 ))}
               </CardContent>

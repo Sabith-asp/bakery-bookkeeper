@@ -5,8 +5,10 @@ import { adminApi } from "@/api/admin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PageShell from "@/components/PageShell";
 import { useToast } from "@/hooks/use-toast";
+import { TIMEZONES } from "@/config/timezones";
 
 const slugify = (value: string) =>
   value
@@ -23,6 +25,10 @@ const CreateOrganizationPage = () => {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
+  const [timezone, setTimezone] = useState(() => {
+    const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return TIMEZONES.some((tz) => tz.value === detected) ? detected : "UTC";
+  });
 
   const handleNameChange = (value: string) => {
     setName(value);
@@ -37,7 +43,7 @@ const CreateOrganizationPage = () => {
   };
 
   const createMutation = useMutation({
-    mutationFn: () => adminApi.createOrganization({ name: name.trim(), slug: slug.trim() }),
+    mutationFn: () => adminApi.createOrganization({ name: name.trim(), slug: slug.trim(), timezone }),
     onSuccess: (org) => {
       queryClient.invalidateQueries({ queryKey: ["admin-organizations"] });
       toast({ title: "Created", description: `${org.name} has been created.` });
@@ -89,6 +95,25 @@ const CreateOrganizationPage = () => {
                 />
                 <p className="text-xs text-muted-foreground">
                   URL-safe identifier, auto-generated from name. Only lowercase letters, numbers, and hyphens.
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Timezone</label>
+                <Select value={timezone} onValueChange={setTimezone} disabled={createMutation.isPending}>
+                  <SelectTrigger className="h-11 md:h-10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TIMEZONES.map((tz) => (
+                      <SelectItem key={tz.value} value={tz.value}>
+                        {tz.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  This org's business timezone — drives "today", overdue dates, and all displayed dates/times for this org.
                 </p>
               </div>
 

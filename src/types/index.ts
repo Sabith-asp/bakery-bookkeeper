@@ -5,6 +5,7 @@ export interface User {
   role: string;
   organizationId: string | null;
   organizationName: string;
+  organizationTimezone: string;
   enabledModules: string[];
 }
 
@@ -33,6 +34,7 @@ export interface Organization {
   isActive: boolean;
   createdAt: string;
   enabledModules: string[];
+  timezone: string;
 }
 
 export interface OrgUser {

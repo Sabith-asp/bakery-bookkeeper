@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
 import { debtApi } from "@/api/debt";
-import { useOrgTimezone, shortDate, formatInTz } from "@/lib/dateUtils";
+import { useOrgTimezone, shortDate, formatInTz, todayInTz } from "@/lib/dateUtils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +27,7 @@ const DebtDetailPage = () => {
 
   const [showAddPayment, setShowAddPayment] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
-  const [paymentDate, setPaymentDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [paymentDate, setPaymentDate] = useState(todayInTz(orgTimezone));
   const [paymentNotes, setPaymentNotes] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletePaymentId, setDeletePaymentId] = useState<string | null>(null);
@@ -48,7 +47,7 @@ const DebtDetailPage = () => {
       setShowAddPayment(false);
       setPaymentAmount("");
       setPaymentNotes("");
-      setPaymentDate(format(new Date(), "yyyy-MM-dd"));
+      setPaymentDate(todayInTz(orgTimezone));
       toast({ title: "Payment recorded" });
     },
     onError: (error: any) => {
@@ -119,7 +118,7 @@ const DebtDetailPage = () => {
     );
   }
 
-  const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: orgTimezone });
+  const todayStr = todayInTz(orgTimezone);
   const isOverdue = !debt.isSettled && debt.dueDate && debt.dueDate < todayStr;
   const isPayable = debt.type === "Payable";
   const progressPct = debt.amount > 0 ? Math.min(100, (debt.paidAmount / debt.amount) * 100) : 0;

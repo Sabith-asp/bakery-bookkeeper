@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
 import { debtApi } from "@/api/debt";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,12 +11,15 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Banknote, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Debt } from "@/types";
+import { useOrgTimezone, useOrgToday } from "@/lib/dateUtils";
 
 const AddDebtPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const orgTimezone = useOrgTimezone();
+  const orgToday = useOrgToday();
 
   const editItem = location.state?.item as Debt | undefined;
   const defaultType = (location.state?.defaultType as "Payable" | "Receivable") ?? "Payable";
@@ -27,7 +29,7 @@ const AddDebtPage = () => {
   const [personName, setPersonName] = useState(editItem?.personName ?? "");
   const [type, setType] = useState<"Payable" | "Receivable">(editItem?.type ?? defaultType);
   const [date, setDate] = useState(
-    editItem ? editItem.date.substring(0, 10) : format(new Date(), "yyyy-MM-dd")
+    editItem ? editItem.date.substring(0, 10) : orgToday
   );
   const [dueDate, setDueDate] = useState(editItem?.dueDate?.substring(0, 10) ?? "");
   const [notes, setNotes] = useState(editItem?.notes ?? "");
@@ -160,7 +162,7 @@ const AddDebtPage = () => {
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">
             Date
           </label>
-          <DatePickerDrawer value={date} onChange={setDate} disabled={isPending} />
+          <DatePickerDrawer value={date} onChange={setDate} disabled={isPending} orgTimezone={orgTimezone} />
         </div>
 
         {/* Due date */}
@@ -186,11 +188,12 @@ const AddDebtPage = () => {
               onChange={setDueDate}
               disabled={isPending}
               allowFuture
+              orgTimezone={orgTimezone}
             />
           ) : (
             <button
               type="button"
-              onClick={() => setDueDate(format(new Date(), "yyyy-MM-dd"))}
+              onClick={() => setDueDate(orgToday)}
               disabled={isPending}
               className="flex w-full items-center gap-2 h-11 px-3 rounded-lg border border-dashed border-border text-sm text-muted-foreground hover:border-primary/40 hover:text-foreground transition-all"
             >
