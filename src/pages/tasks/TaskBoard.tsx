@@ -10,6 +10,7 @@ import type { Task, TaskStatus } from "@/types";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { useOrgToday } from "@/lib/dateUtils";
 import { buildContainers, useMultiContainerDrag } from "./useMultiContainerDrag";
 import SortableItem from "./SortableItem";
 import DroppableContainer from "./DroppableContainer";
@@ -35,12 +36,13 @@ function formatDateShort(dateStr: string) {
 }
 
 function BoardCard({ task, showCreator }: { task: Task; showCreator: boolean }) {
+  const orgToday = startOfDay(parseISO(useOrgToday()));
   const isOverdue =
     task.status !== "Completed" &&
-    isBefore(startOfDay(parseISO(task.currentTargetDate)), startOfDay(new Date()));
+    isBefore(startOfDay(parseISO(task.currentTargetDate)), orgToday);
   const followUpPending = task.status === "Completed" && task.needsFollowUp && !task.followUpResolvedAt;
   const followUpOverdue =
-    followUpPending && isBefore(startOfDay(parseISO(task.followUpDate!)), startOfDay(new Date()));
+    followUpPending && isBefore(startOfDay(parseISO(task.followUpDate!)), orgToday);
   return (
     <div className="rounded-lg border border-border bg-card p-2.5 shadow-sm">
       <p className="text-xs font-medium leading-snug break-words">{task.title}</p>

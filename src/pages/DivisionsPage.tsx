@@ -12,12 +12,14 @@ import { useToast } from "@/hooks/use-toast";
 import { useApiLoading } from "@/state/apiLoading";
 import { Plus, Pencil, Trash2, Check, X, Layers } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
+import { useOrgTimezone, shortDate } from "@/lib/dateUtils";
 
 const DivisionsPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isApiLoading = useApiLoading();
+  const orgTimezone = useOrgTimezone();
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
@@ -161,7 +163,7 @@ const DivisionsPage = () => {
                       <div>
                         <p className="text-sm font-medium text-foreground">{division.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          Since {new Date(division.createdAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", year: "numeric" })}
+                          Since {shortDate(division.createdAt, orgTimezone)}
                         </p>
                       </div>
                     )}

@@ -16,10 +16,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(JSON.parse(storedUser));
       // Then silently refresh modules from the server (picks up any SuperAdmin changes)
       authApi.me().then((data) => {
+        const previousUser = JSON.parse(storedUser);
         const refreshed: User = {
-          ...JSON.parse(storedUser),
+          ...previousUser,
           enabledModules: data.enabledModules ?? [],
           organizationName: data.organizationName ?? "",
+          organizationTimezone: data.organizationTimezone ?? previousUser.organizationTimezone ?? "UTC",
         };
         localStorage.setItem("user", JSON.stringify(refreshed));
         setUser(refreshed);
@@ -39,6 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       role: data.role,
       organizationId: data.organizationId ?? null,
       organizationName: data.organizationName ?? "",
+      organizationTimezone: data.organizationTimezone ?? "UTC",
       enabledModules: data.enabledModules ?? [],
     };
     localStorage.setItem("token", data.token);

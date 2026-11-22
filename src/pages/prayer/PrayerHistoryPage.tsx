@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format, subDays, parseISO } from "date-fns";
+import { timeInTz, todayInTz } from "@/lib/dateUtils";
 import { prayerApi } from "@/api/prayer";
 import type { PrayerRecord, PrayerStatus } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
@@ -50,7 +51,7 @@ function formatTime(ts: string): string {
 
 // ── Day detail card ─────────────────────────────────────────────────────────
 
-const DayDetail = ({ prayers }: { prayers: PrayerRecord[] }) => {
+const DayDetail = ({ prayers, prayerTimezone }: { prayers: PrayerRecord[]; prayerTimezone: string }) => {
   const sorted = [...prayers].sort(
     (a, b) => PRAYER_ORDER.indexOf(a.prayerName) - PRAYER_ORDER.indexOf(b.prayerName)
   );
@@ -85,7 +86,7 @@ const DayDetail = ({ prayers }: { prayers: PrayerRecord[] }) => {
             </span>
             {r.actualCompletionTime && (
               <span className="text-[10px] text-muted-foreground">
-                {format(parseISO(r.actualCompletionTime), "hh:mm a")}
+                {timeInTz(r.actualCompletionTime, prayerTimezone)}
               </span>
             )}
           </div>
@@ -102,8 +103,15 @@ const PrayerHistoryPage = () => {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [page, setPage] = useState(0); // 0 = last 30d, 1 = 30-60d, etc.
 
-  const endDate   = format(subDays(new Date(), page * 30), "yyyy-MM-dd");
-  const startDate = format(subDays(new Date(), page * 30 + 29), "yyyy-MM-dd");
+  const { data: orgSettings } = useQuery({
+    queryKey: ["prayer-org-settings"],
+    queryFn: prayerApi.getOrgSettings,
+  });
+  const prayerTimezone = orgSettings?.timezone ?? "UTC";
+
+  const prayerToday = parseISO(todayInTz(prayerTimezone));
+  const endDate   = format(subDays(prayerToday, page * 30), "yyyy-MM-dd");
+  const startDate = format(subDays(prayerToday, page * 30 + 29), "yyyy-MM-dd");
 
   const { data, isLoading } = useQuery({
     queryKey: ["prayer-history", startDate, endDate],
@@ -239,7 +247,7 @@ const PrayerHistoryPage = () => {
                     {/* Expanded detail */}
                     {isSelected && selectedDay && (
                       <div className="px-1 pb-3">
-                        <DayDetail prayers={selectedDay.prayers} />
+                        <DayDetail prayers={selectedDay.prayers} prayerTimezone={prayerTimezone} />
                       </div>
                     )}
                   </div>

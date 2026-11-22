@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
 import { wageApi } from "@/api/wage";
 import { employeeApi } from "@/api/employee";
 import { divisionApi } from "@/api/division";
@@ -18,6 +17,7 @@ import { PAYMENT_METHODS } from "@/config/paymentMethods";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, Users, Check } from "lucide-react";
 import SaveSuccessOverlay from "@/components/SaveSuccessOverlay";
+import { useOrgTimezone, useOrgToday } from "@/lib/dateUtils";
 
 const MAX_DESC = 100;
 
@@ -28,6 +28,8 @@ const AddWagePage = () => {
   const queryClient = useQueryClient();
   const isApiLoading = useApiLoading();
   const { hasModule } = useAuth();
+  const orgTimezone = useOrgTimezone();
+  const orgToday = useOrgToday();
 
   const editItem = location.state?.item as Wage | undefined;
   const isEditMode = !!editItem;
@@ -40,7 +42,7 @@ const AddWagePage = () => {
   const [paymentMethod, setPaymentMethod] = useState(editItem?.paymentMethod ?? "");
   const [divisionId, setDivisionId] = useState(editItem?.divisionId ?? "");
   const [amount, setAmount] = useState(editItem ? String(editItem.amount) : "");
-  const [date, setDate] = useState(editItem ? editItem.date.substring(0, 10) : format(new Date(), "yyyy-MM-dd"));
+  const [date, setDate] = useState(editItem ? editItem.date.substring(0, 10) : orgToday);
   const [showSuccess, setShowSuccess] = useState(false);
 
   const { data: employees = [], isLoading: isEmployeesLoading } = useQuery({
@@ -208,7 +210,7 @@ const AddWagePage = () => {
           {/* Date */}
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-foreground">Date</label>
-            <DatePickerDrawer value={date} onChange={setDate} />
+            <DatePickerDrawer value={date} onChange={setDate} orgTimezone={orgTimezone} />
           </div>
 
           <div className="h-px bg-border/60" />

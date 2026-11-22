@@ -4,15 +4,18 @@ import { adminApi } from "@/api/admin";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PageShell from "@/components/PageShell";
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, CheckCircle2, XCircle, Plus, Trash2, UserCircle2, Check, X, Layers, Bell } from "lucide-react";
+import { ArrowLeft, CheckCircle2, XCircle, Plus, Trash2, UserCircle2, Check, X, Layers, Bell, Pencil } from "lucide-react";
 import { useState } from "react";
 import type { OrgUser } from "@/types";
+import { useOrgTimezone, shortDate } from "@/lib/dateUtils";
+import { TIMEZONES } from "@/config/timezones";
 
 const ALL_MODULES = ["Income", "Expenses", "Wages", "Employees", "Divisions", "Notifications", "Debts", "Inventory", "Tasks", "Prayer"] as const;
 type Module = (typeof ALL_MODULES)[number];
@@ -40,6 +43,7 @@ const OrganizationDetailPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const orgTimezone = useOrgTimezone();
 
   const [statusDialogOpen, setStatusDialogOpen]   = useState(false);
   const [pendingDeleteUser, setPendingDeleteUser]  = useState<OrgUser | null>(null);
@@ -47,6 +51,8 @@ const OrganizationDetailPage = () => {
   const [newUsername, setNewUsername]              = useState("");
   const [newPassword, setNewPassword]              = useState("");
   const [newRoleId, setNewRoleId]                  = useState(3);
+  const [editingTimezone, setEditingTimezone]      = useState(false);
+  const [pendingTimezone, setPendingTimezone]      = useState("");
 
   // ── Queries ───────────────────────────────────────────────────────────────
 
@@ -116,6 +122,19 @@ const OrganizationDetailPage = () => {
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error?.response?.data?.message || "Failed to create user", variant: "destructive" });
+    },
+  });
+
+  const updateTimezoneMutation = useMutation({
+    mutationFn: (timezone: string) => adminApi.updateTimezone(id!, timezone),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-organization", id] });
+      queryClient.invalidateQueries({ queryKey: ["admin-organizations"] });
+      toast({ title: "Timezone updated" });
+      setEditingTimezone(false);
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error?.response?.data?.message || "Failed to update timezone", variant: "destructive" });
     },
   });
 
@@ -366,8 +385,49 @@ const OrganizationDetailPage = () => {
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">Created</span>
               <span className="text-xs text-foreground">
-                {new Date(org.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                {shortDate(org.createdAt, orgTimezone)}
               </span>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs text-muted-foreground shrink-0">Timezone</span>
+              {editingTimezone ? (
+                <div className="flex items-center gap-1.5">
+                  <Select value={pendingTimezone} onValueChange={setPendingTimezone} disabled={updateTimezoneMutation.isPending}>
+                    <SelectTrigger className="h-8 w-44 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TIMEZONES.map((tz) => (
+                        <SelectItem key={tz.value} value={tz.value}>
+                          {tz.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    size="icon" variant="ghost" className="h-7 w-7 text-primary"
+                    onClick={() => updateTimezoneMutation.mutate(pendingTimezone)}
+                    disabled={updateTimezoneMutation.isPending}
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground"
+                    onClick={() => setEditingTimezone(false)}
+                    disabled={updateTimezoneMutation.isPending}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ) : (
+                <button
+                  className="flex items-center gap-1.5 text-xs text-foreground hover:text-primary"
+                  onClick={() => { setPendingTimezone(org.timezone); setEditingTimezone(true); }}
+                >
+                  {TIMEZONES.find((tz) => tz.value === org.timezone)?.label ?? org.timezone}
+                  <Pencil className="h-3 w-3" />
+                </button>
+              )}
             </div>
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">Active modules</span>

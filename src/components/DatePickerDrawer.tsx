@@ -9,6 +9,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
+import { todayInTz } from "@/lib/dateUtils";
 
 interface DatePickerDrawerProps {
   value: string; // yyyy-MM-dd
@@ -16,12 +17,13 @@ interface DatePickerDrawerProps {
   accentClass?: string;
   disabled?: boolean;
   allowFuture?: boolean;
+  orgTimezone?: string;
 }
 
-const DatePickerDrawer = ({ value, onChange, accentClass, disabled, allowFuture }: DatePickerDrawerProps) => {
+const DatePickerDrawer = ({ value, onChange, accentClass, disabled, allowFuture, orgTimezone = "UTC" }: DatePickerDrawerProps) => {
   const [open, setOpen] = useState(false);
 
-  const selected = value ? parseISO(value) : new Date();
+  const selected = value ? parseISO(value) : parseISO(todayInTz(orgTimezone));
 
   const handleSelect = (date: Date | undefined) => {
     if (!date) return;
@@ -29,16 +31,17 @@ const DatePickerDrawer = ({ value, onChange, accentClass, disabled, allowFuture 
     setOpen(false);
   };
 
-  const today = format(new Date(), "yyyy-MM-dd");
-  const yesterday = format(subDays(new Date(), 1), "yyyy-MM-dd");
-  const tomorrow = format(addDays(new Date(), 1), "yyyy-MM-dd");
+  const todayDate = parseISO(todayInTz(orgTimezone));
+  const today = format(todayDate, "yyyy-MM-dd");
+  const yesterday = format(subDays(todayDate, 1), "yyyy-MM-dd");
+  const tomorrow = format(addDays(todayDate, 1), "yyyy-MM-dd");
 
   const secondQuick = allowFuture
     ? { label: "Tomorrow", value: tomorrow }
     : { label: "Yesterday", value: yesterday };
 
   const olderDates = Array.from({ length: 5 }, (_, i) => {
-    const d = allowFuture ? addDays(new Date(), i + 2) : subDays(new Date(), i + 2);
+    const d = allowFuture ? addDays(todayDate, i + 2) : subDays(todayDate, i + 2);
     return { label: format(d, "EEE d"), value: format(d, "yyyy-MM-dd") };
   });
 
@@ -118,7 +121,7 @@ const DatePickerDrawer = ({ value, onChange, accentClass, disabled, allowFuture 
               mode="single"
               selected={selected}
               onSelect={handleSelect}
-              disabled={allowFuture ? undefined : (date) => date > new Date()}
+              disabled={allowFuture ? undefined : (date) => date > todayDate}
               initialFocus
               classNames={{
                 months: "flex flex-col w-full",

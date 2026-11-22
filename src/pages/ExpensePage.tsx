@@ -2,11 +2,12 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getTemplates } from "@/lib/expenseTemplates";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { format, startOfMonth, endOfMonth } from "date-fns";
+import { format, startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { expenseApi } from "@/api/expense";
 import { divisionApi } from "@/api/division";
 import type { Expense } from "@/types";
 import { useAuth } from "@/context/AuthContext";
+import { useOrgTimezone, formatInTz, todayInTz } from "@/lib/dateUtils";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,11 +31,13 @@ const ExpensePage = () => {
   const queryClient = useQueryClient();
   const isApiLoading = useApiLoading();
   const { hasModule } = useAuth();
+  const orgTimezone = useOrgTimezone();
 
   const templates = getTemplates();
 
-  const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
-  const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
+  const orgToday = parseISO(todayInTz(orgTimezone));
+  const [startDate, setStartDate] = useState(format(startOfMonth(orgToday), "yyyy-MM-dd"));
+  const [endDate, setEndDate] = useState(format(endOfMonth(orgToday), "yyyy-MM-dd"));
   const [category, setCategory] = useState("");
   const [divisionId, setDivisionId] = useState("");
   const [showAllCategories, setShowAllCategories] = useState(false);
@@ -86,7 +89,7 @@ const ExpensePage = () => {
   return (
     <>
     <PageShell title="Expenses" subtitle="Track your spending">
-      <DateRangeFilter startDate={startDate} endDate={endDate} onDateChange={handleDateChange} />
+      <DateRangeFilter startDate={startDate} endDate={endDate} onDateChange={handleDateChange} orgTimezone={orgTimezone} />
 
         <Card className="border-expense/30 bg-expense/5 shadow-sm">
           <CardContent className="py-3">
@@ -202,7 +205,7 @@ const ExpensePage = () => {
                       <div>
                         <p className="text-sm font-medium text-foreground">{item.description}</p>
                         <p className="text-xs text-muted-foreground">
-                          {item.category}{item.paymentMethod ? ` · ${item.paymentMethod}` : ""} · {new Date(item.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "2-digit", year: "numeric" })}
+                          {item.category}{item.paymentMethod ? ` · ${item.paymentMethod}` : ""} · {formatInTz(item.date, { day: "2-digit", month: "2-digit", year: "numeric" }, orgTimezone)}
                         </p>
                       </div>
                     </div>
@@ -245,7 +248,7 @@ const ExpensePage = () => {
                 <p><span className="font-medium text-foreground">Description:</span> {pendingDelete?.description}</p>
                 <p><span className="font-medium text-foreground">Category:</span> {pendingDelete?.category}</p>
                 <p><span className="font-medium text-foreground">Amount:</span> ₹{pendingDelete?.amount.toLocaleString("en-IN")}</p>
-                <p><span className="font-medium text-foreground">Date:</span> {pendingDelete && new Date(pendingDelete.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}</p>
+                <p><span className="font-medium text-foreground">Date:</span> {pendingDelete && formatInTz(pendingDelete.date, {}, orgTimezone)}</p>
                 <p className="pt-1 text-destructive">This action cannot be undone.</p>
               </div>
             </AlertDialogDescription>

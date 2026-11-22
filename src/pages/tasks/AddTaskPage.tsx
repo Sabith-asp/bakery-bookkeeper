@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { format } from "date-fns";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { taskApi } from "@/api/task";
 import type { Task } from "@/types";
@@ -23,6 +22,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useOrgTimezone, useOrgToday } from "@/lib/dateUtils";
 
 const PRIORITIES = ['High', 'Medium', 'Low'] as const;
 
@@ -38,6 +38,8 @@ const AddTaskPage = () => {
   const { toast } = useToast();
   const qc = useQueryClient();
   const isApiLoading = useApiLoading();
+  const orgTimezone = useOrgTimezone();
+  const orgToday = useOrgToday();
 
   const editItem = location.state?.item as Task | undefined;
   const defaultDate = location.state?.defaultDate as string | undefined;
@@ -56,7 +58,7 @@ const AddTaskPage = () => {
   const [targetDate, setTargetDate] = useState(
     editItem?.currentTargetDate?.slice(0, 10) ??
       defaultDate ??
-      format(new Date(), 'yyyy-MM-dd')
+      orgToday
   );
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -257,7 +259,7 @@ const AddTaskPage = () => {
           {/* Target date */}
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-foreground">Target Date</label>
-            <DatePickerDrawer value={targetDate} onChange={setTargetDate} allowFuture />
+            <DatePickerDrawer value={targetDate} onChange={setTargetDate} allowFuture orgTimezone={orgTimezone} />
           </div>
 
         </div>

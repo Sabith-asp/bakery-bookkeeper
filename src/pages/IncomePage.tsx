@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { format, startOfMonth, endOfMonth } from "date-fns";
+import { format, startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { incomeApi } from "@/api/income";
 import { divisionApi } from "@/api/division";
 import type { Income } from "@/types";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
+import { useOrgTimezone, formatInTz, todayInTz } from "@/lib/dateUtils";
 import EmptyState from "@/components/EmptyState";
 import ErrorState from "@/components/ErrorState";
 import CardLoader from "@/components/CardLoader";
@@ -28,9 +29,11 @@ const IncomePage = () => {
   const queryClient = useQueryClient();
   const isApiLoading = useApiLoading();
   const { hasModule } = useAuth();
+  const orgTimezone = useOrgTimezone();
 
-  const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
-  const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
+  const orgToday = parseISO(todayInTz(orgTimezone));
+  const [startDate, setStartDate] = useState(format(startOfMonth(orgToday), "yyyy-MM-dd"));
+  const [endDate, setEndDate] = useState(format(endOfMonth(orgToday), "yyyy-MM-dd"));
   const [divisionId, setDivisionId] = useState("");
   const [pendingDelete, setPendingDelete] = useState<Income | null>(null);
   const [page, setPage] = useState(1);
@@ -75,7 +78,7 @@ const IncomePage = () => {
   return (
     <>
     <PageShell title="Income" subtitle="Track your earnings">
-      <DateRangeFilter startDate={startDate} endDate={endDate} onDateChange={handleDateChange} />
+      <DateRangeFilter startDate={startDate} endDate={endDate} onDateChange={handleDateChange} orgTimezone={orgTimezone} />
 
         {/* Division filter */}
         {divisions.length > 0 && (
@@ -137,7 +140,7 @@ const IncomePage = () => {
                       <div>
                         <p className="text-sm font-medium text-foreground">{item.description}</p>
                         <p className="text-xs text-muted-foreground">
-                          {item.paymentMethod ? `${item.paymentMethod} · ` : ""}{new Date(item.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}
+                          {item.paymentMethod ? `${item.paymentMethod} · ` : ""}{formatInTz(item.date, {}, orgTimezone)}
                         </p>
                       </div>
                     </div>
@@ -179,7 +182,7 @@ const IncomePage = () => {
               <div className="space-y-1 text-sm">
                 <p><span className="font-medium text-foreground">Description:</span> {pendingDelete?.description}</p>
                 <p><span className="font-medium text-foreground">Amount:</span> ₹{pendingDelete?.amount.toLocaleString("en-IN")}</p>
-                <p><span className="font-medium text-foreground">Date:</span> {pendingDelete && new Date(pendingDelete.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}</p>
+                <p><span className="font-medium text-foreground">Date:</span> {pendingDelete && formatInTz(pendingDelete.date, {}, orgTimezone)}</p>
                 <p className="pt-1 text-destructive">This action cannot be undone.</p>
               </div>
             </AlertDialogDescription>
